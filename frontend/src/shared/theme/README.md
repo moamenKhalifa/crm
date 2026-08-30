@@ -1,0 +1,1 @@
+Theme and design tokens: `ThemeProvider`/`useTheme` supply light/dark `ThemeTokens` and branding, applied to `document.documentElement` as CSS custom properties. `useBreakpoint`/`mediaQuery` expose the shared responsive breakpoints. Components must read colors/spacing from CSS variables, never hard-code them.

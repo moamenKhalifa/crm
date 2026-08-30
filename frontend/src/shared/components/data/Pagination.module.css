@@ -1,0 +1,31 @@
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.arrow {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding-inline: var(--space-sm);
+  padding-block: var(--space-xs);
+  color: var(--color-text);
+}
+
+.arrow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.status {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* Glyphs are inherently directional — flip them in RTL so "previous" still
+   points toward the start of reading order. */
+html[dir='rtl'] .arrow {
+  transform: scaleX(-1);
+}

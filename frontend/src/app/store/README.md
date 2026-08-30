@@ -1,0 +1,1 @@
+Centralized application state (Zustand): `useAppStore` holds the current user, roles, permissions, tokens, locale, and theme name; `selectors.ts` exposes typed selectors. Only `features/authentication` writes session state — everything else reads via `useAuth()`/`useAuthorization()`, which read this store internally.

@@ -1,0 +1,27 @@
+.breadcrumb {
+  font-size: var(--font-size-sm);
+}
+
+.list {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.link {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.separator {
+  color: var(--color-text-muted);
+}

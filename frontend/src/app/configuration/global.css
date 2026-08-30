@@ -1,0 +1,35 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* CSS variables injected by ThemeProvider (src/shared/theme) — these are
+     fallbacks only, used before the provider mounts or if it is absent. */
+  --color-bg: #fff;
+  --color-text: #111;
+  --color-primary: #2563eb;
+  --space-md: 12px;
+  --radius-md: 6px;
+  --font-size-md: 14px;
+  --line-height-base: 1.4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html[dir='rtl'] {
+  direction: rtl;
+}
+
+html[dir='ltr'] {
+  direction: ltr;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-base);
+}

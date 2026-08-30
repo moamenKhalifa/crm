@@ -1,0 +1,23 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-md);
+  color: var(--color-text);
+}
+
+.checkbox {
+  accent-color: var(--color-primary);
+}
+
+.error {
+  font-size: var(--font-size-xs);
+  color: var(--color-danger);
+  margin: 0;
+}

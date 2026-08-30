@@ -1,0 +1,21 @@
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: start;
+}
+
+.headerCell {
+  text-align: start;
+  padding: var(--space-sm);
+  border-block-end: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.cell {
+  padding: var(--space-sm);
+  border-block-end: 1px solid var(--color-border);
+  font-size: var(--font-size-md);
+  color: var(--color-text);
+}

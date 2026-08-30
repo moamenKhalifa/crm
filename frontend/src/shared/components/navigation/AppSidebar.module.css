@@ -1,0 +1,28 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: 220px;
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border-inline-end: 1px solid var(--color-border);
+}
+
+.sidebar[data-collapsed] {
+  width: 64px;
+}
+
+.collapseButton {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-size-lg);
+  color: var(--color-text);
+}
+
+.link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}

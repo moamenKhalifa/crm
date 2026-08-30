@@ -1,0 +1,51 @@
+[project]
+name = "crm-backend"
+version = "0.1.0"
+description = "CRM backend — Onion Architecture modular monolith"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<0.116",
+  "uvicorn[standard]>=0.30,<0.31",
+  "sqlalchemy>=2.0,<2.1",
+  "psycopg[binary]>=3.2,<3.3",
+  "pydantic>=2.8,<3.0",
+  "pydantic-settings>=2.4,<3.0",
+  "python-dotenv>=1.0,<2.0",
+  "passlib[bcrypt]>=1.7,<2.0",
+  # passlib 1.7.4's bcrypt backend self-test crashes against bcrypt>=4.1
+  # (which dropped a legacy 72-byte truncation shim passlib probes for).
+  "bcrypt>=4.0,<4.1",
+  "pyjwt>=2.9,<3.0",
+  "email-validator>=2.2,<3.0",
+  "alembic>=1.13,<2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9.0",
+  "pytest-asyncio>=0.24,<0.25",
+  "httpx>=0.27,<0.28",
+  "ruff>=0.6,<0.7",
+  "mypy>=1.11,<2.0",
+  "freezegun>=1.5,<2.0",
+  "aiosqlite>=0.20,<0.21",
+  "types-passlib>=1.7,<2.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]

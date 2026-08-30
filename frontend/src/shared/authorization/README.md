@@ -1,0 +1,1 @@
+Authorization primitives: `AuthorizationProvider` receives roles/permissions as props (composed from the store in `AppProviders`), `useAuthorization()` exposes `hasRole`/`hasPermission`/etc., `<RequireAuth>` guards routes, `<PermissionGate>` guards UI. These are UI conveniences only — the backend remains the final authority on every request.

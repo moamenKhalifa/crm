@@ -1,0 +1,27 @@
+version: 1
+project:
+  name: FullStack Task
+  primaryLanguage: typescript
+  projectRoots:
+    - .
+tracker:
+  type: azure
+  workspace: moamenkhalifa0584
+  project: Customer Support CRM
+naming:
+  includeTrackerId: true
+  globalSequence: true
+agents: []
+planner:
+  enabled: true
+  provider: anthropic
+  mode: auto
+  budget:
+    maxFileReads: 100
+    maxContextBytes: 5000000
+    maxDurationSeconds: 720
+  cache:
+    enabled: true
+  maxOutputTokens: 46384
+  auth:
+    anthropic: subscription

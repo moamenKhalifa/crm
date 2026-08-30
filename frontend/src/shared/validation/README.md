@@ -1,0 +1,1 @@
+Reusable validation: pure `rules.ts` functions (composable via `compose`), Zod `schemas.ts` for structured validation, and the framework-free `useForm` hook. All error results are i18n keys (or `"key|param"`, decoded by `resolveValidationMessage`) — never hard-coded messages.

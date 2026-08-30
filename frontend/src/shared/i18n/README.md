@@ -1,0 +1,1 @@
+Localization: `LocaleProvider`/`useLocale` own the active locale, persist it, and set `<html lang>`/`<html dir>` (RTL for `ar`). `useT()` reads translated strings from `locales/{en,ar}/common.json`. Feature code must access user-facing text only through `useT()` — never hard-coded English/Arabic literals.

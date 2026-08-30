@@ -1,0 +1,47 @@
+{
+  "app": {
+    "title": "Customer Support CRM"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "email": "Email",
+    "password": "Password",
+    "rememberMe": "Remember me",
+    "errors": {
+      "invalidCredentials": "Invalid email or password.",
+      "sessionExpired": "Your session has expired. Please sign in again."
+    }
+  },
+  "errors": {
+    "network": "Unable to reach the server. Check your connection and try again.",
+    "unexpected": "Something went wrong. Please try again.",
+    "forbidden": "You don't have permission to do that.",
+    "notFound": "The requested item could not be found."
+  },
+  "states": {
+    "loading": "Loading…",
+    "empty": "Nothing to show yet.",
+    "retry": "Retry"
+  },
+  "validation": {
+    "required": "This field is required.",
+    "email": "Enter a valid email address.",
+    "minLength": "Must be at least {{count}} characters.",
+    "maxLength": "Must be at most {{count}} characters.",
+    "passwordStrength": "Password must be at least 8 characters and include a letter and a number."
+  },
+  "nav": {
+    "header": {
+      "menu": "Menu"
+    },
+    "sidebar": {
+      "collapse": "Collapse sidebar"
+    }
+  },
+  "common": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "close": "Close"
+  }
+}

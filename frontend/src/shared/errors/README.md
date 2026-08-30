@@ -1,0 +1,1 @@
+Centralized error-to-message mapping: `toUserMessage(error, t)` turns an `ApiError` (or any thrown value) into an i18n key via the `isUnauthorized`/`isForbidden`/`isNotFound`/`isNetworkError` narrowing helpers from `@shared/api`, defaulting to `errors.unexpected`.
