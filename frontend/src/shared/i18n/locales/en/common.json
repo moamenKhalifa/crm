@@ -8,16 +8,73 @@
     "email": "Email",
     "password": "Password",
     "rememberMe": "Remember me",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "brandHeading": "Customer Support CRM",
+    "localeSwitcher": {
+      "label": "Language",
+      "en": "English",
+      "ar": "Arabic"
+    },
+    "links": {
+      "forgotPassword": "Forgot your password?",
+      "createAccount": "Create an account"
+    },
+    "validation": {
+      "email": {
+        "required": "Enter your email address",
+        "invalid": "Enter a valid email address"
+      },
+      "password": {
+        "required": "Enter your password"
+      }
+    },
+    "login": {
+      "title": "Sign in",
+      "summaryHeading": "Please fix the highlighted fields",
+      "error": {
+        "invalidCredentials": "Email or password is incorrect",
+        "accountDisabled": "This account has been deactivated. Please contact your administrator",
+        "accountLocked": "Too many failed attempts. Try again in {{countdown}}",
+        "invitePending": "This account has not been activated yet. Check your email for the invitation",
+        "rateLimited": "Too many attempts. Please wait and try again"
+      },
+      "info": {
+        "signedOut": "You have been signed out"
+      }
+    },
+    "userMenu": {
+      "myProfile": "My profile",
+      "changePassword": "Change password"
+    },
     "errors": {
       "invalidCredentials": "Invalid email or password.",
       "sessionExpired": "Your session has expired. Please sign in again."
+    },
+    "register": {
+      "title": "Create your account",
+      "fullName": "Full name",
+      "confirmPassword": "Confirm password",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "signInLink": "Sign in",
+      "errors": {
+        "duplicateAccount": "An account with this email already exists.",
+        "passwordMismatch": "Passwords do not match.",
+        "validation": "Please review the highlighted fields."
+      }
     }
   },
   "errors": {
     "network": "Unable to reach the server. Check your connection and try again.",
     "unexpected": "Something went wrong. Please try again.",
     "forbidden": "You don't have permission to do that.",
-    "notFound": "The requested item could not be found."
+    "forbiddenTitle": "Access denied",
+    "backHome": "Back to home",
+    "notFound": "The requested item could not be found.",
+    "retryableBanner": "We couldn't reach the server. Correlation id: {{id}}.",
+    "rateLimited": "Too many requests. Try again in {{seconds}} s.",
+    "unknownCode": "{{message}}"
   },
   "states": {
     "loading": "Loading…",
@@ -39,9 +96,322 @@
       "collapse": "Collapse sidebar"
     }
   },
+  "admin": {
+    "nav": {
+      "users": "Users",
+      "roles": "Roles",
+      "permissions": "Permissions"
+    },
+    "common": {
+      "actions": {
+        "reason": {
+          "requiresPermission": "Requires the {{permission}} permission",
+          "cannotDeleteSelf": "You cannot delete your own account",
+          "cannotDeactivateSelf": "You cannot deactivate your own account"
+        }
+      }
+    },
+    "users": {
+      "title": "Users",
+      "subtitle": "{{count}} users",
+      "create": "Create user",
+      "editTitle": "Edit user",
+      "customer": "Customer",
+      "staff": "Staff",
+      "columns": {
+        "fullName": "Full name",
+        "email": "Email",
+        "active": "Active",
+        "roles": "Roles",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "actions": {
+        "view": "View",
+        "edit": "Edit",
+        "delete": "Delete",
+        "activate": "Activate",
+        "deactivate": "Deactivate",
+        "save": "Save"
+      },
+      "fields": {
+        "fullName": "Full name",
+        "isCustomer": "Customer account",
+        "roles": "Roles"
+      },
+      "rolesSection": {
+        "title": "Roles",
+        "manage": "Manage roles"
+      },
+      "assignRoles": {
+        "title": "Assign roles"
+      },
+      "confirmDelete": {
+        "title": "Delete user?",
+        "body": "This permanently removes the user. This cannot be undone."
+      },
+      "toasts": {
+        "created": "User created.",
+        "updated": "User updated.",
+        "deleted": "User deleted.",
+        "activated": "User activated.",
+        "deactivated": "User deactivated.",
+        "rolesUpdated": "Roles updated."
+      },
+      "errors": {
+        "duplicateAccount": "An account with this email already exists.",
+        "validation": "Please review the highlighted fields.",
+        "assignFailed": "Could not update roles. Please try again."
+      }
+    },
+    "roles": {
+      "title": "Roles",
+      "subtitle": "{{count}} roles",
+      "create": "Create role",
+      "editTitle": "Edit role",
+      "columns": {
+        "name": "Name",
+        "description": "Description",
+        "actions": "Actions"
+      },
+      "actions": {
+        "view": "View",
+        "edit": "Edit",
+        "delete": "Delete",
+        "save": "Save"
+      },
+      "fields": {
+        "name": "Name",
+        "description": "Description"
+      },
+      "permissionsSection": {
+        "title": "Permissions",
+        "manage": "Manage permissions",
+        "remove": "Remove {{code}}"
+      },
+      "assignPermissions": {
+        "title": "Assign permissions"
+      },
+      "confirmDelete": {
+        "title": "Delete role?",
+        "body": "This permanently removes the role, including from any users who hold it. This cannot be undone."
+      },
+      "toasts": {
+        "created": "Role created.",
+        "updated": "Role updated.",
+        "deleted": "Role deleted.",
+        "permissionsUpdated": "Permissions updated."
+      },
+      "errors": {
+        "duplicateRole": "A role with this name already exists.",
+        "validation": "Please review the highlighted fields.",
+        "assignFailed": "Could not update permissions. Please try again."
+      }
+    },
+    "permissions": {
+      "title": "Permissions",
+      "subtitle": "{{count}} permissions",
+      "create": "Create permission",
+      "editTitle": "Edit permission",
+      "columns": {
+        "code": "Code",
+        "description": "Description",
+        "actions": "Actions"
+      },
+      "actions": {
+        "view": "View",
+        "edit": "Edit",
+        "delete": "Delete",
+        "save": "Save"
+      },
+      "fields": {
+        "code": "Code",
+        "codeHint": "Section.Action format, e.g. User.View",
+        "description": "Description"
+      },
+      "confirmDelete": {
+        "title": "Delete permission?",
+        "body": "This permanently removes the permission, including from any roles that grant it. This cannot be undone."
+      },
+      "toasts": {
+        "created": "Permission created.",
+        "updated": "Permission updated.",
+        "deleted": "Permission deleted."
+      },
+      "errors": {
+        "duplicatePermission": "A permission with this code already exists.",
+        "validation": "Please review the highlighted fields.",
+        "codeFormat": "Use Section.Action format, e.g. User.View."
+      }
+    }
+  },
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel",
-    "close": "Close"
+    "close": "Close",
+    "moreActions": "More actions",
+    "error": {
+      "unexpected": "Something went wrong. Please try again. Reference: {{correlationId}}"
+    }
+  },
+  "designSystem": {
+    "title": "Design tokens",
+    "sections": {
+      "colors": "Colours",
+      "spacing": "Spacing",
+      "radii": "Radii",
+      "shadows": "Shadows",
+      "typography": "Typography",
+      "motion": "Motion",
+      "forms": "Forms"
+    },
+    "columns": {
+      "token": "Token",
+      "value": "Resolved value",
+      "use": "Intended use",
+      "contrast": "Contrast"
+    },
+    "motionDemo": "Hover me",
+    "typographySample": "The quick brown fox جملة اختبار مُسْتَخْدِمٌ",
+    "color": {
+      "action": "Primary buttons, links, active navigation",
+      "actionHover": "Hover and pressed states",
+      "actionSubtle": "Selected rows, info chips, focus tint",
+      "textStrong": "Headings",
+      "textDefault": "Body copy, table cells",
+      "textMuted": "Helper text, column headers, timestamps",
+      "textDisabled": "Disabled control labels",
+      "borderInput": "Input, select and checkbox boundaries",
+      "borderSubtle": "Dividers, card edges",
+      "surface": "Cards, table body, dialogs",
+      "surfaceSunken": "Page background, table header, zebra rows",
+      "surfaceDisabled": "Disabled control surface",
+      "success": "Active badges, success banners",
+      "successBg": "Success banner background",
+      "warning": "Pending states, warnings",
+      "warningBg": "Warning banner background",
+      "danger": "Error text and banners",
+      "dangerBg": "Error banner background",
+      "dangerSolid": "Destructive button background"
+    },
+    "button": {
+      "title": "Button",
+      "variants": {
+        "primary": "Primary",
+        "secondary": "Secondary",
+        "tertiary": "Tertiary",
+        "danger": "Danger",
+        "danger-subtle": "Danger (subtle)",
+        "link": "Link"
+      },
+      "sizes": {
+        "sm": "Small",
+        "md": "Medium",
+        "lg": "Large"
+      },
+      "states": {
+        "default": "Default",
+        "hover": "Hover (see the CSS — not simulated on this page)",
+        "focusVisible": "Focus-visible — tab to a button to see the ring",
+        "active": "Active / pressed",
+        "loading": "Loading",
+        "disabled": "Disabled",
+        "disabledWithReason": "Disabled, with a reason",
+        "iconOnly": "Icon-only"
+      },
+      "guidance": {
+        "title": "When to use / when not to use",
+        "columns": {
+          "context": "Context",
+          "use": "Use",
+          "avoid": "Avoid"
+        },
+        "rows": {
+          "pageHeader": {
+            "context": "Page header",
+            "use": "One primary action",
+            "avoid": "More than one primary button"
+          },
+          "tableRow": {
+            "context": "Table row",
+            "use": "Tertiary for view/edit, danger-subtle for delete",
+            "avoid": "A bordered or solid danger button in a row"
+          },
+          "formFooter": {
+            "context": "Form footer",
+            "use": "Primary for save, secondary or tertiary for cancel",
+            "avoid": "Two primary buttons side by side"
+          },
+          "confirmationDialog": {
+            "context": "Confirmation dialog",
+            "use": "Solid danger for the destructive confirm action",
+            "avoid": "Solid danger anywhere outside a dialog"
+          },
+          "emptyState": {
+            "context": "Empty state",
+            "use": "One primary call to action",
+            "avoid": "Multiple competing actions"
+          },
+          "detailPageHeader": {
+            "context": "Detail page header",
+            "use": "Secondary or tertiary for utilities, danger-subtle for delete",
+            "avoid": "Solid danger as a page-level trigger"
+          }
+        }
+      }
+    },
+    "forms": {
+      "title": "Form controls",
+      "controls": {
+        "textInput": "Text input",
+        "textArea": "Text area",
+        "passwordInput": "Password input",
+        "emailInput": "Email input",
+        "codeInput": "Code input",
+        "searchField": "Search field",
+        "select": "Select",
+        "checkbox": "Checkbox",
+        "radio": "Radio",
+        "radioGroup": "Radio group",
+        "switch": "Switch",
+        "formRow": "Form row",
+        "formSection": "Form section",
+        "formActions": "Form actions"
+      },
+      "states": {
+        "default": "Default",
+        "hover": "Hover (see the CSS — not simulated on this page)",
+        "focusVisible": "Focus-visible — tab to a control to see the ring",
+        "filled": "Filled",
+        "disabled": "Disabled",
+        "readOnly": "Read-only",
+        "error": "Error",
+        "loading": "Loading"
+      },
+      "planned": {
+        "title": "Planned — not yet built",
+        "note": "Planned — see Story 13",
+        "combobox": "Combobox (searchable)",
+        "multiSelect": "Multi-select",
+        "datePicker": "Date picker"
+      }
+    }
+  },
+  "forms": {
+    "requiredNote": "* Fields marked with an asterisk are required.",
+    "unsavedChanges": {
+      "confirm": "You have unsaved changes. Leave this page and discard them?"
+    },
+    "search": {
+      "clear": "Clear search",
+      "placeholder": "Search"
+    },
+    "switch": {
+      "on": "On",
+      "off": "Off"
+    }
   }
 }

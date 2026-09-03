@@ -1,0 +1,17 @@
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+  inline-size: 100%;
+}
+
+/* `:dir(rtl)` is the standards-track way to express this without a JS
+   branch; `[dir='rtl'] .actions` is kept alongside it as a fallback in case
+   a test or older engine doesn't resolve the `:dir()` pseudo-class. */
+.actions:dir(rtl) {
+  flex-direction: row-reverse;
+}
+
+[dir='rtl'] .actions {
+  flex-direction: row-reverse;
+}

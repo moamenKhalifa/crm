@@ -2,11 +2,9 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { I18nextProvider } from 'react-i18next';
 
 import i18n, { initI18n } from './config';
+import { applyDocumentDirection, directionFor, LOCALE_STORAGE_KEY, type Direction, type Locale } from './documentDirection';
 
-const STORAGE_KEY = 'crm.locale';
-
-export type Locale = 'en' | 'ar';
-export type Direction = 'ltr' | 'rtl';
+export type { Locale, Direction };
 
 export interface LocaleContextValue {
   locale: Locale;
@@ -16,13 +14,9 @@ export interface LocaleContextValue {
 
 const LocaleContext = createContext<LocaleContextValue | undefined>(undefined);
 
-function directionFor(locale: Locale): Direction {
-  return locale === 'ar' ? 'rtl' : 'ltr';
-}
-
 function readStoredLocale(): Locale | null {
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
     return stored === 'en' || stored === 'ar' ? stored : null;
   } catch {
     return null;
@@ -39,14 +33,13 @@ export function LocaleProvider({ children, defaultLocale = 'en' }: LocaleProvide
 
   useEffect(() => {
     initI18n(locale);
-    document.documentElement.lang = locale;
-    document.documentElement.dir = directionFor(locale);
+    applyDocumentDirection(locale);
   }, [locale]);
 
   const setLocale = (next: Locale) => {
     setLocaleState(next);
     try {
-      window.localStorage.setItem(STORAGE_KEY, next);
+      window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
     } catch {
       // Storage disabled (e.g. Safari private mode) — locale still applies for this session.
     }

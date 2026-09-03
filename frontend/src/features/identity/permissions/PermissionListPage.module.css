@@ -1,0 +1,22 @@
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-block-end: var(--space-lg);
+}
+
+.pageTitle {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+}
+
+.pageSubtitle {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  margin: var(--space-xxs) 0 0;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}

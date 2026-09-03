@@ -1,0 +1,64 @@
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+  color: var(--color-text-default);
+  cursor: pointer;
+}
+
+.track {
+  position: relative;
+  display: inline-block;
+  inline-size: var(--space-8);
+  block-size: var(--space-6);
+  border-radius: var(--radius-full);
+  background: var(--color-border-input);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.track:has(.input:checked) {
+  background: var(--color-action);
+}
+
+.track:has(.input:disabled) {
+  opacity: 0.5;
+}
+
+.input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Animates the *logical* offset (not `transform: translateX`) so the thumb
+   travels the correct physical direction under RTL without any
+   component-level direction branch (G7). */
+.thumb {
+  position: absolute;
+  inset-block-start: var(--space-1);
+  inset-inline-start: var(--space-1);
+  inline-size: calc(var(--space-6) - var(--space-1) * 2);
+  block-size: calc(var(--space-6) - var(--space-1) * 2);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  transition: inset-inline-start var(--duration-fast) var(--ease-out);
+}
+
+.input:focus-visible ~ .thumb {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.input:checked ~ .thumb {
+  inset-inline-start: var(--space-4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track,
+  .thumb {
+    transition-duration: 0.01ms;
+  }
+}

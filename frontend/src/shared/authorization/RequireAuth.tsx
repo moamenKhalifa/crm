@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 
-import { AppLoading } from '@shared/components/AppLoading';
+import { AppSplash } from '@shared/components/AppSplash';
 
 import { useAuthorization } from './useAuthorization';
 
@@ -19,7 +19,7 @@ export interface RequireAuthProps {
   permission?: string;
   anyPermission?: string[];
   allPermissions?: string[];
-  /** Where to send an authenticated-but-unauthorized visitor. Default `/`. */
+  /** Where to send an authenticated-but-unauthorized visitor. Default `/forbidden`. */
   redirectTo?: string;
 }
 
@@ -37,11 +37,11 @@ export function RequireAuth({
   const { hasRole, hasAnyRole, hasPermission, hasAnyPermission, hasAllPermissions } = useAuthorization();
 
   if (status === 'unknown') {
-    return <AppLoading />;
+    return <AppSplash />;
   }
 
   if (status !== 'authenticated') {
-    return <Navigate to="/sign-in" state={{ from: location.pathname }} replace />;
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
   const authorized =
@@ -52,7 +52,7 @@ export function RequireAuth({
     (!allPermissions || hasAllPermissions(...allPermissions));
 
   if (!authorized) {
-    return <Navigate to={redirectTo ?? '/'} replace />;
+    return <Navigate to={redirectTo ?? '/forbidden'} replace />;
   }
 
   return children;

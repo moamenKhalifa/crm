@@ -1,6 +1,12 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { toHaveNoViolations } from 'jest-axe';
+import { afterEach, expect } from 'vitest';
+
+import { __resetTokenStoreForTests } from '@shared/api/tokenStore';
+import { __resetRefreshBridgeForTests } from '@features/authentication/refreshBridge';
+
+expect.extend(toHaveNoViolations);
 
 // `app/configuration/env.ts` builds `appConfig` eagerly at import time (so
 // consumers get a plain typed object, not a hook), which requires the
@@ -15,4 +21,6 @@ Object.assign(import.meta.env, {
 
 afterEach(() => {
   cleanup();
+  __resetTokenStoreForTests();
+  __resetRefreshBridgeForTests();
 });

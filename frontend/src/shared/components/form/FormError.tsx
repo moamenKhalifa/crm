@@ -13,7 +13,7 @@ export function FormError({ errorKey }: FormErrorProps) {
   }
 
   return (
-    <p role="alert" style={{ color: 'var(--color-danger)', fontSize: 'var(--font-size-sm)', margin: 0 }}>
+    <p role="alert" style={{ color: 'var(--color-danger)', fontSize: 'var(--text-xs)', margin: 0 }}>
       {t(errorKey)}
     </p>
   );

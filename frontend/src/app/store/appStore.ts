@@ -13,16 +13,11 @@ export type AuthStatus = 'unknown' | 'anonymous' | 'authenticated';
 export interface AppStoreState {
   authStatus: AuthStatus;
   user: StoreUser | null;
-  /** Never persisted to `localStorage` — see `frontend/docs/architecture.md` §Authentication. */
-  accessToken: string | null;
-  /** In-memory by default; mirrored to `sessionStorage` only on explicit `rememberMe`. */
-  refreshToken: string | null;
   locale: 'en' | 'ar';
   themeName: 'light' | 'dark';
 
-  setSession(input: { user: StoreUser; accessToken: string; refreshToken: string }): void;
+  setSession(input: { user: StoreUser }): void;
   clearSession(): void;
-  setTokens(input: { accessToken: string; refreshToken: string }): void;
   setLocale(locale: 'en' | 'ar'): void;
   setTheme(theme: 'light' | 'dark'): void;
 }
@@ -30,18 +25,12 @@ export interface AppStoreState {
 export const useAppStore = create<AppStoreState>((set) => ({
   authStatus: 'unknown',
   user: null,
-  accessToken: null,
-  refreshToken: null,
   locale: 'en',
   themeName: 'light',
 
-  setSession: ({ user, accessToken, refreshToken }) =>
-    set({ authStatus: 'authenticated', user, accessToken, refreshToken }),
+  setSession: ({ user }) => set({ authStatus: 'authenticated', user }),
 
-  clearSession: () =>
-    set({ authStatus: 'anonymous', user: null, accessToken: null, refreshToken: null }),
-
-  setTokens: ({ accessToken, refreshToken }) => set({ accessToken, refreshToken }),
+  clearSession: () => set({ authStatus: 'anonymous', user: null }),
 
   setLocale: (locale) => set({ locale }),
 

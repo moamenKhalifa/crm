@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import { useLocale } from '@shared/i18n/LocaleProvider';
+
 import type { Branding } from './branding';
 import { defaultBranding } from './branding';
 import { applyThemeToRoot } from './cssVariables';
@@ -43,12 +45,13 @@ export interface ThemeProviderProps {
 
 export function ThemeProvider({ children, branding = defaultBranding }: ThemeProviderProps) {
   const [themeName, setThemeNameState] = useState<ThemeTokens['name']>(resolveInitialThemeName);
+  const { locale } = useLocale();
 
   const theme = themeName === 'dark' ? darkTheme : lightTheme;
 
   useEffect(() => {
-    applyThemeToRoot(theme);
-  }, [theme]);
+    applyThemeToRoot(theme, locale);
+  }, [theme, locale]);
 
   const setThemeName = (name: ThemeTokens['name']) => {
     setThemeNameState(name);

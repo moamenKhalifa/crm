@@ -1,9 +1,10 @@
+import { AuthenticatedShell } from '@features/authentication/AuthenticatedShell';
+
 export default function PortalArea() {
   return (
-    <div>
+    <AuthenticatedShell>
       <h1>Portal</h1>
       {/* CRM modules for this area will register their own sub-routes here. */}
-      <p>This area has no modules yet.</p>
-    </div>
+    </AuthenticatedShell>
   );
 }

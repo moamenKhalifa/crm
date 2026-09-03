@@ -2,12 +2,25 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
+  max-inline-size: 480px;
+}
+
+.field[data-max-width='field'] {
+  max-inline-size: 480px;
+}
+
+.field[data-max-width='wide'] {
+  max-inline-size: 720px;
+}
+
+.field[data-max-width='full'] {
+  max-inline-size: 100%;
 }
 
 .label {
-  font-size: var(--font-size-sm);
+  font-size: var(--text-sm);
   font-weight: var(--font-weight-medium);
-  color: var(--color-text);
+  color: var(--color-text-default);
   text-align: start;
 }
 
@@ -15,27 +28,70 @@
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  min-block-size: 40px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
   padding-inline: var(--space-sm);
-  background: var(--color-bg);
+  background: var(--color-surface);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+/* Reuses `--color-text-muted` (already darker than `--color-border-input`)
+   rather than introducing a new `--color-border-input-hover` alias just for
+   this one state. */
+.inputWrapper:hover {
+  border-color: var(--color-text-muted);
 }
 
 .inputWrapper:focus-within {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 1px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.inputWrapper:has(.input[aria-invalid='true']) {
+  border-color: var(--color-danger);
+}
+
+.inputWrapper:has(.input[aria-readonly='true']) {
+  background: var(--color-surface-sunken);
+}
+
+.inputWrapper:has(.input:disabled) {
+  background: var(--color-surface-disabled);
 }
 
 .input {
   flex: 1;
-  min-width: 0;
+  min-inline-size: 0;
   border: none;
   outline: none;
   background: transparent;
-  color: var(--color-text);
-  font-size: var(--font-size-md);
+  color: var(--color-text-default);
+  font-size: var(--text-sm);
   padding-block: var(--space-sm);
   text-align: start;
+}
+
+.input:disabled {
+  color: var(--color-text-disabled);
+}
+
+/* Overrides the browser's default yellow autofill background so an
+   autofilled field keeps the designed appearance (AC13). The absurdly long
+   transition-delay is the standard trick: Chrome/Safari only apply
+   `-webkit-autofill` styling via computed background/box-shadow, not
+   `background-color` directly, so this defers their internal repaint long
+   enough that it's never visible. */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  /* stylelint-disable-next-line property-no-vendor-prefix -- `-webkit-text-fill-color`
+     has no standard equivalent; it's the only way to override autofill's forced text colour. */
+  -webkit-text-fill-color: var(--color-text-default);
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- `1000px` is an
+     arbitrarily large spread standing in for "cover the field", not a spacing-scale value. */
+  box-shadow: 0 0 0 1000px var(--color-surface) inset;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 .icon {
@@ -45,13 +101,13 @@
 }
 
 .hint {
-  font-size: var(--font-size-xs);
+  font-size: var(--text-xs);
   color: var(--color-text-muted);
   margin: 0;
 }
 
 .error {
-  font-size: var(--font-size-xs);
+  font-size: var(--text-xs);
   color: var(--color-danger);
   margin: 0;
 }

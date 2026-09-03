@@ -1,1 +1,2 @@
-export { toUserMessage } from './toUserMessage';
+export { toUserMessage, resolveErrorMessage } from './toUserMessage';
+export { redactForTelemetry } from './redact';

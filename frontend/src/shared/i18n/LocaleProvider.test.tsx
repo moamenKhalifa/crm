@@ -1,6 +1,7 @@
 import { render, renderHook, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { applyDocumentDirection } from './documentDirection';
 import { LocaleProvider, useLocale } from './LocaleProvider';
 import { useT } from './useT';
 
@@ -52,5 +53,28 @@ describe('LocaleProvider', () => {
 
   it('throws when used outside LocaleProvider', () => {
     expect(() => renderHook(() => useLocale())).toThrow('useLocale must be used within LocaleProvider');
+  });
+
+  it('applyDocumentDirection sets dir="rtl"/lang="ar" for Arabic and dir="ltr" for English', () => {
+    applyDocumentDirection('ar');
+    expect(document.documentElement.dir).toBe('rtl');
+    expect(document.documentElement.lang).toBe('ar');
+
+    applyDocumentDirection('en');
+    expect(document.documentElement.dir).toBe('ltr');
+    expect(document.documentElement.lang).toBe('en');
+  });
+
+  it('calls applyDocumentDirection on every locale change at runtime', async () => {
+    render(
+      <LocaleProvider defaultLocale="en">
+        <Probe />
+      </LocaleProvider>,
+    );
+
+    screen.getByText('go arabic').click();
+
+    await waitFor(() => expect(document.documentElement.dir).toBe('rtl'));
+    expect(document.documentElement.lang).toBe('ar');
   });
 });

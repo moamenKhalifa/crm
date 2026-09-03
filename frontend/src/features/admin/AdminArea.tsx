@@ -1,9 +1,15 @@
+import { Outlet } from 'react-router-dom';
+
+import { AuthenticatedShell } from '@features/authentication/AuthenticatedShell';
+
+import { AdminLayout } from './AdminLayout';
+
 export default function AdminArea() {
   return (
-    <div>
-      <h1>Admin</h1>
-      {/* CRM modules for this area will register their own sub-routes here. */}
-      <p>This area has no modules yet.</p>
-    </div>
+    <AuthenticatedShell>
+      <AdminLayout>
+        <Outlet />
+      </AdminLayout>
+    </AuthenticatedShell>
   );
 }

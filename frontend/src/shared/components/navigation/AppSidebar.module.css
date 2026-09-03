@@ -2,14 +2,15 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  width: 220px;
+  inline-size: 220px;
+  min-block-size: 100vh;
   padding: var(--space-md);
-  background: var(--color-surface);
-  border-inline-end: 1px solid var(--color-border);
+  background: var(--color-surface-sunken);
+  border-inline-end: 1px solid var(--color-border-subtle);
 }
 
 .sidebar[data-collapsed] {
-  width: 64px;
+  inline-size: 64px;
 }
 
 .collapseButton {
@@ -17,12 +18,31 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-size: var(--font-size-lg);
-  color: var(--color-text);
+  font-size: var(--text-base);
+  color: var(--color-text-default);
 }
 
 .link {
   text-decoration: none;
-  color: inherit;
+  color: var(--color-text-default);
   display: block;
+  padding-inline: var(--space-sm);
+  padding-block: var(--space-xs);
+  border-radius: var(--radius-md);
+}
+
+.link:hover {
+  background: var(--color-surface);
+}
+
+.collapseButton:focus-visible,
+.link:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.linkActive {
+  background: var(--color-surface);
+  color: var(--color-action);
+  font-weight: var(--font-weight-medium);
 }

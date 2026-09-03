@@ -40,7 +40,10 @@ export function AppSidebar({ items }: AppSidebarProps) {
     key: item.key,
     icon: item.icon,
     label: (
-      <NavLink to={item.to} className={styles.link}>
+      <NavLink
+        to={item.to}
+        className={({ isActive }) => (isActive ? `${styles.link} ${styles.linkActive}` : styles.link)}
+      >
         {item.label}
       </NavLink>
     ),

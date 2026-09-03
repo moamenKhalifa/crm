@@ -8,16 +8,28 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
-  font-size: var(--font-size-md);
-  color: var(--color-text);
+  font-size: var(--text-sm);
+  color: var(--color-text-default);
 }
 
 .checkbox {
-  accent-color: var(--color-primary);
+  accent-color: var(--color-action);
+}
+
+.checkbox:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin: 0;
+  margin-inline-start: calc(1em + var(--space-xs));
 }
 
 .error {
-  font-size: var(--font-size-xs);
+  font-size: var(--text-xs);
   color: var(--color-danger);
   margin: 0;
 }

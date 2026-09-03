@@ -2,6 +2,8 @@ import { renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { LocaleProvider } from '@shared/i18n';
+
 import { ThemeProvider } from './ThemeProvider';
 import { lightTheme } from './tokens';
 import { useBreakpoint } from './useBreakpoint';
@@ -23,7 +25,11 @@ function mockMatchMediaAtWidth(widthPx: number) {
 }
 
 function wrapper({ children }: { children: ReactNode }) {
-  return <ThemeProvider>{children}</ThemeProvider>;
+  return (
+    <LocaleProvider>
+      <ThemeProvider>{children}</ThemeProvider>
+    </LocaleProvider>
+  );
 }
 
 describe('useBreakpoint', () => {

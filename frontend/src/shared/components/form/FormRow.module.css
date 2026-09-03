@@ -1,0 +1,13 @@
+.row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-md);
+}
+
+/* Never splits a related pair below 768px — the two-column layout only
+   applies from the tablet breakpoint up (intake's field-width rule). */
+@media (width >= 768px) {
+  .row[data-columns='2'] {
+    grid-template-columns: 1fr 1fr;
+  }
+}

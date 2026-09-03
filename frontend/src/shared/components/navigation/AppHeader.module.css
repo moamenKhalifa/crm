@@ -5,7 +5,8 @@
   padding-inline: var(--space-lg);
   padding-block: var(--space-sm);
   background: var(--color-surface);
-  border-block-end: 1px solid var(--color-border);
+  border-block-end: 1px solid var(--color-border-subtle);
+  box-shadow: var(--shadow-sm);
 }
 
 .brand {
@@ -15,13 +16,13 @@
 }
 
 .logo {
-  height: 24px;
-  width: 24px;
+  block-size: 24px;
+  inline-size: 24px;
 }
 
 .appName {
   font-weight: var(--font-weight-bold);
-  color: var(--color-text);
+  color: var(--color-text-default);
 }
 
 .actions {

@@ -4,7 +4,8 @@ import styles from './FormActions.module.css';
 
 export interface FormActionsProps {
   children: ReactNode;
-  align?: 'start' | 'end' | 'space-between';
+  /** `'stretch'` stacks actions and lets a `fullWidth` `<Button>` span the row — used by the auth cards' primary submit action. */
+  align?: 'start' | 'end' | 'space-between' | 'stretch';
 }
 
 export function FormActions({ children, align = 'end' }: FormActionsProps) {

@@ -11,3 +11,7 @@
 .actions[data-align='space-between'] {
   justify-content: space-between;
 }
+
+.actions[data-align='stretch'] {
+  flex-direction: column;
+}

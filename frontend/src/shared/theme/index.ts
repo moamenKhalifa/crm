@@ -1,13 +1,17 @@
 export { ThemeProvider, useTheme } from './ThemeProvider';
 export type { ThemeContextValue, ThemeProviderProps } from './ThemeProvider';
-export { lightTheme, darkTheme } from './tokens';
+export { lightTheme, darkTheme, rawScale, lightAliases } from './tokens';
 export type {
   ThemeTokens,
   ColorTokens,
+  SemanticColorAliases,
+  RawScale,
   SpacingScale,
   RadiusScale,
   ShadowScale,
   TypographyTokens,
+  MotionTokens,
+  TypeStep,
   Breakpoints,
 } from './tokens';
 export { defaultBranding } from './branding';

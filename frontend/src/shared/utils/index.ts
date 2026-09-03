@@ -1,1 +1,1 @@
-export {};
+export { formatCountdown } from './formatCountdown';

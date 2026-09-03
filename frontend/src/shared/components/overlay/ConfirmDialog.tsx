@@ -4,6 +4,7 @@ import { Button, type ButtonVariant } from '@shared/components/button/Button';
 import { useT } from '@shared/i18n';
 
 import { Modal } from './Modal';
+import styles from './ConfirmDialog.module.css';
 
 export interface ConfirmDialogProps {
   open: boolean;
@@ -40,14 +41,17 @@ export function ConfirmDialog({
       onClose={onClose}
       title={title}
       footer={
-        <>
+        // Physical DOM order is always [Cancel][Confirm] — `.actions:dir(rtl)`
+        // flips it visually so Confirm still sits on the reading-end side in
+        // both directions, with no JS branch (AC per the intake).
+        <div className={styles.actions}>
           <Button variant="secondary" onClick={onClose}>
             {cancelLabel ?? t('common.cancel')}
           </Button>
           <Button variant={variant} onClick={onConfirm}>
             {confirmLabel ?? t('common.confirm')}
           </Button>
-        </>
+        </div>
       }
     >
       <div onKeyDown={handleKeyDown}>{children}</div>

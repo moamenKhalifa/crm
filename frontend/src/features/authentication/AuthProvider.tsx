@@ -11,22 +11,24 @@ import {
 
 import { useAppConfig } from '@app/configuration/ConfigProvider';
 import { useAppStore } from '@app/store/appStore';
-import { HttpClient, isApiError } from '@shared/api';
+import { HttpClient, isApiError, setAccessToken } from '@shared/api';
+import { bumpCacheGeneration } from '@shared/hooks';
 
 import { fetchMe, fetchPermissionsForRoles, login, logout, refresh as refreshRequest } from './api';
 import type { TokenPairResponse, UserResponse } from './api';
+import { refreshBridge } from './refreshBridge';
 
-export type Role = string;
+export type AuthStatus = 'unknown' | 'authenticated' | 'anonymous';
 
 export interface AuthUser {
   id: string;
-  email: string;
   fullName: string;
-  roles: string[];
-  permissions: string[];
+  email: string;
+  // TODO(backend): map emailVerified + locale once /auth/me exposes them;
+  // fallback: emailVerified=true, locale=null.
+  emailVerified: boolean;
+  locale: 'en' | 'ar' | null;
 }
-
-export type AuthStatus = 'unknown' | 'anonymous' | 'authenticated';
 
 export interface SignInInput {
   email: string;
@@ -35,47 +37,27 @@ export interface SignInInput {
 }
 
 export interface AuthContextValue {
-  user: AuthUser | null;
   status: AuthStatus;
-  isAuthenticated: boolean;
+  user: AuthUser | null;
+  roles: string[];
+  permissions: string[];
   signIn(input: SignInInput): Promise<void>;
   signOut(): Promise<void>;
-  getAccessToken(): string | undefined;
-  /** Used by `ApiClientProvider`'s `onUnauthorized` — returns `true` if the retry should proceed. */
+  /** Called by `HttpClient.onSessionExpired` — returns true if retry may proceed. */
   refresh(): Promise<boolean>;
+  /** Re-fetches `/auth/me` + permissions for the current session; no-op if anonymous. */
+  reloadAuthContext(): Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const REFRESH_TOKEN_STORAGE_KEY = 'crm.rt';
-
-function readStoredRefreshToken(): string | null {
-  try {
-    return window.sessionStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredRefreshToken(token: string | null): void {
-  try {
-    if (token) {
-      window.sessionStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, token);
-    } else {
-      window.sessionStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
-    }
-  } catch {
-    // Storage disabled (e.g. Safari private mode) — session still works in-memory for this tab.
-  }
-}
-
-function toAuthUser(me: UserResponse, permissions: string[]): AuthUser {
+function toAuthUser(me: UserResponse): AuthUser {
   return {
     id: me.id,
-    email: me.email,
     fullName: me.full_name,
-    roles: me.roles.map((role) => role.name),
-    permissions,
+    email: me.email,
+    emailVerified: true,
+    locale: null,
   };
 }
 
@@ -83,65 +65,98 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const config = useAppConfig();
   const setSessionInStore = useAppStore((state) => state.setSession);
   const clearSessionInStore = useAppStore((state) => state.clearSession);
-  const setTokensInStore = useAppStore((state) => state.setTokens);
 
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [status, setStatus] = useState<AuthStatus>('unknown');
-  const accessTokenRef = useRef<string | undefined>(undefined);
+  // The refresh token is never exposed on the context, in the Zustand store,
+  // or in any public API — this ref is a purely internal, tab-local detail
+  // AuthProvider needs to call `refresh()`/`signOut()` itself. See
+  // `refreshBridge.ts` for the storage-backed copy used across a page
+  // reload; per D-01 that bridge is a temporary stand-in for a backend
+  // refresh cookie and will be deleted once that lands.
   const refreshTokenRef = useRef<string | undefined>(undefined);
   const rememberMeRef = useRef(false);
   const bootstrapped = useRef(false);
+  const statusRef = useRef(status);
+  statusRef.current = status;
 
-  // Login/refresh are public endpoints and logout/me carry their own Bearer
-  // header explicitly (see api.ts) — a private client sidesteps a circular
-  // dependency: `ApiClientProvider` (below this in AppProviders) needs
-  // `getAccessToken`/`refresh` FROM this provider, so this provider cannot
-  // itself depend on `useApiClient()`.
-  const authClient = useMemo(() => new HttpClient({ baseUrl: config.apiBaseUrl }), [config.apiBaseUrl]);
+  // Every `HttpClient` instance reads the current access token from the
+  // module-scoped `tokenStore`, not from a constructor-injected callback —
+  // so this instance behaves identically to the one `ApiClientProvider`
+  // hands to the rest of the app without the two needing to be the same
+  // object. That's what breaks the circular dependency: `AuthProvider` sits
+  // above `ApiClientProvider` in the tree (see `AppProviders.tsx`) and so
+  // cannot call `useApiClient()` itself.
+  const client = useMemo(() => new HttpClient({ baseUrl: config.apiBaseUrl }), [config.apiBaseUrl]);
 
   const applySession = useCallback(
-    (tokens: TokenPairResponse, me: UserResponse, permissions: string[]) => {
-      accessTokenRef.current = tokens.access_token;
+    (tokens: TokenPairResponse, me: UserResponse, nextPermissions: string[]) => {
+      setAccessToken(tokens.access_token);
       refreshTokenRef.current = tokens.refresh_token;
 
-      const nextUser = toAuthUser(me, permissions);
+      const nextUser = toAuthUser(me);
+      const nextRoles = me.roles.map((role) => role.name);
       setUser(nextUser);
+      setRoles(nextRoles);
+      setPermissions(nextPermissions);
       setStatus('authenticated');
       setSessionInStore({
-        user: nextUser,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
+        user: {
+          id: nextUser.id,
+          email: nextUser.email,
+          fullName: nextUser.fullName,
+          roles: nextRoles,
+          permissions: nextPermissions,
+        },
       });
 
-      if (rememberMeRef.current) {
-        writeStoredRefreshToken(tokens.refresh_token);
-      }
+      // Always write: the mode argument decides whether the token also
+      // lands in `localStorage` (survives a browser restart) or stays
+      // memory-only for this tab (cleared the moment the tab's JS context
+      // ends) — see `refreshBridge.ts`.
+      refreshBridge.write(tokens.refresh_token, rememberMeRef.current ? 'persistent' : 'session');
     },
     [setSessionInStore],
   );
 
-  const clearSession = useCallback(() => {
-    accessTokenRef.current = undefined;
-    refreshTokenRef.current = undefined;
-    rememberMeRef.current = false;
-    setUser(null);
-    setStatus('anonymous');
-    clearSessionInStore();
-    writeStoredRefreshToken(null);
-    // No imperative navigation here: `AuthProvider` sits above the router in
-    // `AppProviders`, outside `RouterProvider`'s context. Any mounted
-    // `<RequireAuth>` reacts to `status` becoming non-authenticated and
-    // redirects to `/sign-in` on its own.
-  }, [clearSessionInStore]);
+  const clearSession = useCallback(
+    (options: { broadcast?: boolean } = {}) => {
+      setAccessToken(undefined);
+      refreshTokenRef.current = undefined;
+      rememberMeRef.current = false;
+      setUser(null);
+      setRoles([]);
+      setPermissions([]);
+      setStatus('anonymous');
+      clearSessionInStore();
+      refreshBridge.clear();
+      if (options.broadcast) {
+        // Only the user's own sign-out broadcasts — a bootstrap/refresh
+        // failure clearing an already-anonymous or never-authenticated tab
+        // has nothing to tell sibling tabs.
+        refreshBridge.broadcastSignOut();
+      }
+      // No imperative navigation here: `AuthProvider` sits above the router in
+      // `AppProviders`, outside `RouterProvider`'s context. Any mounted
+      // `<RequireAuth>` reacts to `status` becoming non-authenticated and
+      // redirects to `/login` on its own.
+    },
+    [clearSessionInStore],
+  );
 
   const bootstrapSession = useCallback(
     async (tokens: TokenPairResponse) => {
-      const me = await fetchMe(authClient, tokens.access_token);
+      // The access token must be in `tokenStore` before `fetchMe`/permission
+      // calls go out, since `HttpClient` attaches it automatically now.
+      setAccessToken(tokens.access_token);
+      const me = await fetchMe(client);
       const roleIds = me.roles.map((role) => role.id);
-      const permissions = await fetchPermissionsForRoles(authClient, tokens.access_token, roleIds);
-      applySession(tokens, me, permissions);
+      const fetchedPermissions = await fetchPermissionsForRoles(client, roleIds);
+      applySession(tokens, me, fetchedPermissions);
     },
-    [authClient, applySession],
+    [client, applySession],
   );
 
   useEffect(() => {
@@ -151,81 +166,170 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     bootstrapped.current = true;
 
-    const storedRefreshToken = readStoredRefreshToken();
+    const storedRefreshToken = refreshBridge.read();
     if (!storedRefreshToken) {
       setStatus('anonymous');
       return;
     }
 
+    // On a fresh page load the bridge's in-memory tier is always empty, so a
+    // non-null read here can only have come from `localStorage` — i.e. a
+    // remembered session from a previous visit.
     rememberMeRef.current = true;
     void (async () => {
       try {
-        const tokens = await refreshRequest(authClient, storedRefreshToken);
+        const tokens = await refreshRequest(client, storedRefreshToken);
         await bootstrapSession(tokens);
-      } catch {
-        clearSession();
+      } catch (error) {
+        // 4xx from refresh = the stored token is truly bad → force anonymous.
+        // Network / 5xx = leave `status = 'unknown'` and retry once after 2s.
+        //   Prevents a transient offline state from silently logging the user
+        //   out between tabs, and satisfies AC1/AC2 (status must not resolve
+        //   to 'anonymous' or 'authenticated' before a real answer exists).
+        if (isApiError(error) && error.status >= 400 && error.status < 500) {
+          clearSession();
+        } else {
+          setTimeout(() => {
+            void (async () => {
+              try {
+                const retryTokens = await refreshRequest(client, storedRefreshToken);
+                await bootstrapSession(retryTokens);
+              } catch {
+                clearSession();
+              }
+            })();
+          }, 2000);
+        }
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Multi-tab sign-out (AC16): a sibling tab's sign-out broadcasts via
+  // `localStorage`'s `storage` event (never fired in the originating tab
+  // itself, only in others sharing the same origin).
+  useEffect(
+    () =>
+      refreshBridge.onSignOutBroadcast(() => {
+        if (statusRef.current === 'authenticated') {
+          bumpCacheGeneration();
+          clearSession();
+        }
+      }),
+    [clearSession],
+  );
+
+  // BFCache / back-button hardening (AC15): a `pageshow` with
+  // `event.persisted === true` means this tab's JS heap was frozen and is
+  // now being resumed as-is — any sign-out that happened on a sibling tab
+  // while this one was suspended was never observed. Re-validate against
+  // the bridge (and the backend, via a fresh refresh) before trusting the
+  // frozen `status`.
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) {
+        return;
+      }
+      const storedRefreshToken = refreshBridge.read();
+      if (!storedRefreshToken) {
+        if (statusRef.current === 'authenticated') {
+          clearSession();
+        }
+        return;
+      }
+      void (async () => {
+        try {
+          const tokens = await refreshRequest(client, storedRefreshToken);
+          await bootstrapSession(tokens);
+        } catch {
+          clearSession();
+        }
+      })();
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, [client, bootstrapSession, clearSession]);
+
   const signIn = useCallback(
     async ({ email, password, rememberMe = false }: SignInInput) => {
       rememberMeRef.current = rememberMe;
-      const tokens = await login(authClient, { email, password });
+      const tokens = await login(client, { email, password });
       await bootstrapSession(tokens);
     },
-    [authClient, bootstrapSession],
+    [client, bootstrapSession],
   );
 
   const signOut = useCallback(async () => {
-    const currentRefreshToken = refreshTokenRef.current;
-    const currentAccessToken = accessTokenRef.current;
-    if (currentRefreshToken && currentAccessToken) {
-      try {
-        await logout(authClient, currentRefreshToken, currentAccessToken);
-      } catch {
-        // Best-effort — the local session is cleared regardless of the server's response.
+    const refreshToken = refreshTokenRef.current ?? refreshBridge.read();
+    bumpCacheGeneration();
+    try {
+      if (refreshToken) {
+        await logout(client, refreshToken);
       }
+    } catch {
+      // Best-effort — the local session is cleared regardless of the server's response.
     }
-    clearSession();
-  }, [authClient, clearSession]);
+    clearSession({ broadcast: true });
+  }, [client, clearSession]);
 
-  const getAccessToken = useCallback(() => accessTokenRef.current, []);
+  const reloadAuthContext = useCallback(async () => {
+    if (status !== 'authenticated') {
+      return;
+    }
+    const me = await fetchMe(client);
+    const roleIds = me.roles.map((role) => role.id);
+    const nextPermissions = await fetchPermissionsForRoles(client, roleIds);
+    const nextUser = toAuthUser(me);
+    const nextRoles = me.roles.map((role) => role.name);
+    setUser(nextUser);
+    setRoles(nextRoles);
+    setPermissions(nextPermissions);
+    setSessionInStore({
+      user: {
+        id: nextUser.id,
+        email: nextUser.email,
+        fullName: nextUser.fullName,
+        roles: nextRoles,
+        permissions: nextPermissions,
+      },
+    });
+  }, [status, client, setSessionInStore]);
 
   const refresh = useCallback(async (): Promise<boolean> => {
-    const currentRefreshToken = refreshTokenRef.current;
+    const currentRefreshToken = refreshTokenRef.current ?? refreshBridge.read();
     if (!currentRefreshToken) {
       return false;
     }
     try {
-      const tokens = await refreshRequest(authClient, currentRefreshToken);
-      accessTokenRef.current = tokens.access_token;
+      const tokens = await refreshRequest(client, currentRefreshToken);
+      setAccessToken(tokens.access_token);
       refreshTokenRef.current = tokens.refresh_token;
-      setTokensInStore({ accessToken: tokens.access_token, refreshToken: tokens.refresh_token });
-      if (rememberMeRef.current) {
-        writeStoredRefreshToken(tokens.refresh_token);
-      }
+      refreshBridge.write(tokens.refresh_token, rememberMeRef.current ? 'persistent' : 'session');
       return true;
     } catch (error) {
-      if (isApiError(error) && error.status === 401) {
+      // Any 4xx means the refresh token itself is invalid/expired/revoked —
+      // clear the session. A network/5xx failure leaves the session intact
+      // so `HttpClient`'s caller can retry; see the bootstrap effect above
+      // for the same discrimination.
+      if (isApiError(error) && error.status >= 400 && error.status < 500) {
         clearSession();
       }
       return false;
     }
-  }, [authClient, setTokensInStore, clearSession]);
+  }, [client, clearSession]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      user,
       status,
-      isAuthenticated: status === 'authenticated',
+      user,
+      roles,
+      permissions,
       signIn,
       signOut,
-      getAccessToken,
       refresh,
+      reloadAuthContext,
     }),
-    [user, status, signIn, signOut, getAccessToken, refresh],
+    [status, user, roles, permissions, signIn, signOut, refresh, reloadAuthContext],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

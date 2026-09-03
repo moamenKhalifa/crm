@@ -5,7 +5,8 @@ import { selectPermissions, selectRoles } from '@app/store/selectors';
 import { AuthProvider, useAuth } from '@features/authentication/AuthProvider';
 import { ApiClientProvider } from '@shared/api/ApiClientProvider';
 import { AuthorizationProvider } from '@shared/authorization';
-import { LocaleProvider } from '@shared/i18n';
+import { AppSplash, ToastProvider, useToast } from '@shared/components';
+import { LocaleProvider, useT } from '@shared/i18n';
 import { defaultBranding, ThemeProvider } from '@shared/theme';
 
 import { ConfigProvider, useAppConfig } from '../configuration/ConfigProvider';
@@ -44,21 +45,27 @@ function AuthorizationWithStore({ children }: { children: ReactNode }) {
 
 function ApiClientWithConfig({ children }: { children: ReactNode }) {
   const { apiBaseUrl } = useAppConfig();
-  const { getAccessToken, refresh, signOut } = useAuth();
+  const { refresh, signOut, reloadAuthContext } = useAuth();
+  const { t } = useT();
+  const toast = useToast();
 
   return (
     <ApiClientProvider
       baseUrl={apiBaseUrl}
-      getAuthorizationHeader={() => {
-        const token = getAccessToken();
-        return token ? `Bearer ${token}` : undefined;
-      }}
-      onUnauthorized={async () => {
+      onSessionExpired={async () => {
         const refreshed = await refresh();
         if (!refreshed) {
+          toast.show({ variant: 'danger', message: t('auth.errors.sessionExpired') });
           await signOut();
         }
         return refreshed;
+      }}
+      onForbidden={() => {
+        toast.show({ variant: 'danger', message: t('errors.forbidden') });
+        // Covers the "permissions changed mid-session" case from the HTTP
+        // handling matrix: reconcile the local role/permission set against
+        // the server's before treating the denial as final.
+        void reloadAuthContext();
       }}
     >
       {children}
@@ -66,18 +73,35 @@ function ApiClientWithConfig({ children }: { children: ReactNode }) {
   );
 }
 
+/** Gates `children` behind auth bootstrap resolving — no protected route renders and no redirect fires while `status === 'unknown'` (AC1, AC3). */
+function AppShell({ children }: { children: ReactNode }) {
+  const { status } = useAuth();
+  if (status === 'unknown') {
+    return <AppSplash />;
+  }
+  return <>{children}</>;
+}
+
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ConfigProvider>
-      <ThemeWithConfig>
-        <LocaleWithConfig>
-          <AuthProvider>
-            <AuthorizationWithStore>
-              <ApiClientWithConfig>{children}</ApiClientWithConfig>
-            </AuthorizationWithStore>
-          </AuthProvider>
-        </LocaleWithConfig>
-      </ThemeWithConfig>
+      {/* Locale must be an ancestor of Theme — `ThemeProvider` reads
+          `useLocale()` so the applied `--line-height-*` tokens match the
+          active locale (see `shared/theme/ThemeProvider.tsx`). */}
+      <LocaleWithConfig>
+        <ThemeWithConfig>
+          <ToastProvider>
+            {/* TODO: mount QueryClientProvider when TanStack Query is adopted */}
+            <AuthProvider>
+              <AuthorizationWithStore>
+                <ApiClientWithConfig>
+                  <AppShell>{children}</AppShell>
+                </ApiClientWithConfig>
+              </AuthorizationWithStore>
+            </AuthProvider>
+          </ToastProvider>
+        </ThemeWithConfig>
+      </LocaleWithConfig>
     </ConfigProvider>
   );
 }

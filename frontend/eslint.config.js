@@ -25,4 +25,25 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Raw hex colours and pixel literals belong only in the token
+    // definition file — everywhere else must reference a CSS custom
+    // property (AC1). `src/shared/theme/**` is the one place allowed to
+    // hold the literal values these rules would otherwise flag.
+    files: ['**/*.{ts,tsx}'],
+    ignores: ['src/shared/theme/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "Literal[value=/^#[0-9a-fA-F]{3,8}$/]",
+          message: 'Raw hex colours are not allowed outside src/shared/theme — reference a CSS custom property instead.',
+        },
+        {
+          selector: "Literal[value=/^\\d+px$/]",
+          message: 'Raw pixel values are not allowed outside src/shared/theme — reference a CSS custom property instead.',
+        },
+      ],
+    },
+  },
 )

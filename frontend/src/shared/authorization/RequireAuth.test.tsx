@@ -15,8 +15,9 @@ function renderAt(
     <AuthorizationProvider roles={roles} permissions={permissions}>
       <MemoryRouter initialEntries={['/protected']}>
         <Routes>
-          <Route path="/sign-in" element={<h1>Sign in</h1>} />
+          <Route path="/login" element={<h1>Sign in</h1>} />
           <Route path="/" element={<h1>Home</h1>} />
+          <Route path="/forbidden" element={<h1>Forbidden</h1>} />
           <Route
             path="/protected"
             element={
@@ -32,19 +33,20 @@ function renderAt(
 }
 
 describe('RequireAuth', () => {
-  it('renders AppLoading while status is unknown', () => {
+  it('renders AppSplash while status is unknown', () => {
     renderAt('unknown');
+    expect(screen.getByTestId('app-splash')).toBeInTheDocument();
     expect(screen.getByText('Loading…')).toBeInTheDocument();
   });
 
-  it('redirects to /sign-in when unauthenticated', () => {
+  it('redirects to /login when unauthenticated', () => {
     renderAt('anonymous');
     expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
   });
 
-  it('redirects to / when missing the required role', () => {
+  it('redirects to /forbidden when missing the required role', () => {
     renderAt('authenticated', { role: 'admin' }, ['agent'], []);
-    expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Forbidden' })).toBeInTheDocument();
   });
 
   it('renders children when role and permission checks pass', () => {

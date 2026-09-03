@@ -19,12 +19,16 @@ export function useAsync<T, Args extends unknown[] = []>(
   const [error, setError] = useState<unknown>(undefined);
   const mounted = useRef(true);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    // Reset on every mount — see `useApiData.ts` for why: React 18
+    // StrictMode's dev-only mount→cleanup→remount cycle otherwise leaves
+    // `mounted.current` stuck `false` forever, silently dropping every
+    // state update `run()` makes after that point.
+    mounted.current = true;
+    return () => {
       mounted.current = false;
-    },
-    [],
-  );
+    };
+  }, []);
 
   const run = useCallback(
     async (...args: Args) => {

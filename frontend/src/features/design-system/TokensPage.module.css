@@ -1,0 +1,102 @@
+.page {
+  padding: var(--space-xl);
+  color: var(--color-text-default);
+}
+
+.swatch {
+  display: inline-block;
+  inline-size: var(--space-6);
+  block-size: var(--space-6);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.spacingRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-block-end: var(--space-xs);
+}
+
+.spacingBar {
+  display: inline-block;
+  block-size: var(--space-3);
+  background: var(--color-action);
+  border-radius: var(--radius-sm);
+}
+
+.radiusRow,
+.shadowRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-block-end: var(--space-sm);
+}
+
+.radiusSwatch {
+  display: inline-block;
+  inline-size: var(--space-8);
+  block-size: var(--space-8);
+  background: var(--color-action-subtle);
+  border: 1px solid var(--color-border-input);
+}
+
+.shadowSwatch {
+  display: inline-block;
+  inline-size: var(--space-8);
+  block-size: var(--space-8);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+}
+
+.typeRow {
+  margin-block-end: var(--space-lg);
+}
+
+.typeSampleLatin,
+.typeSampleArabic {
+  margin: var(--space-xs) 0;
+}
+
+.motionToken {
+  display: block;
+  margin-block-end: var(--space-xs);
+}
+
+.motionDemo {
+  margin-block-start: var(--space-md);
+  padding-inline: var(--space-md);
+  padding-block: var(--space-sm);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-md);
+  background: var(--color-action);
+  color: var(--color-surface);
+  cursor: pointer;
+  transition: background-color var(--duration-base) var(--ease-out);
+}
+
+.motionDemo:hover {
+  background: var(--color-action-hover);
+}
+
+.motionDemo:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.buttonGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-block-end: var(--space-lg);
+}
+
+.buttonRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.buttonSample {
+  display: inline-flex;
+}

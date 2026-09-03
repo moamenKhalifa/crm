@@ -8,7 +8,13 @@ const AgentArea = lazy(() => import('@features/agent/AgentArea'));
 const AdminArea = lazy(() => import('@features/admin/AdminArea'));
 const PortalArea = lazy(() => import('@features/portal/PortalArea'));
 const SignInPage = lazy(() => import('@features/authentication/SignInPage'));
+const RegisterPage = lazy(() => import('@features/authentication/RegisterPage'));
 const NotFoundPage = lazy(() => import('@shared/components/NotFoundPage'));
+const ForbiddenPage = lazy(() => import('@shared/components/ForbiddenPage'));
+const UserAdminRoutes = lazy(() => import('@features/identity/users/UserRoutes'));
+const RoleAdminRoutes = lazy(() => import('@features/identity/roles/RoleRoutes'));
+const PermissionAdminRoutes = lazy(() => import('@features/identity/permissions/PermissionRoutes'));
+const TokensPage = lazy(() => import('@features/design-system/TokensPage'));
 
 // `shared/authorization/RequireAuth` cannot import `useAuth` itself (shared/
 // must not import features/) — this wrapper, living in app/routing (which
@@ -24,7 +30,9 @@ function Protected(props: Omit<RequireAuthProps, 'status'>) {
 function createRouter() {
   return createBrowserRouter([
     { path: '/', element: <Navigate to="/agent" replace /> },
-    { path: '/sign-in', element: <SignInPage /> },
+    { path: '/login', element: <SignInPage /> },
+    { path: '/sign-in', element: <Navigate to="/login" replace /> },
+    { path: '/register', element: <RegisterPage /> },
     {
       path: '/agent/*',
       element: (
@@ -34,13 +42,43 @@ function createRouter() {
       ),
     },
     {
-      path: '/admin/*',
+      path: '/admin',
       element: (
         <Protected role="admin">
           <AdminArea />
         </Protected>
       ),
+      children: [
+        { index: true, element: <Navigate to="users" replace /> },
+        {
+          path: 'users/*',
+          element: (
+            <Protected permission="User.View">
+              <UserAdminRoutes />
+            </Protected>
+          ),
+        },
+        {
+          path: 'roles/*',
+          element: (
+            <Protected permission="Role.View">
+              <RoleAdminRoutes />
+            </Protected>
+          ),
+        },
+        {
+          path: 'permissions/*',
+          element: (
+            <Protected permission="Permission.View">
+              <PermissionAdminRoutes />
+            </Protected>
+          ),
+        },
+      ],
     },
+    { path: '/forbidden', element: <ForbiddenPage /> },
+    // Docs are not shipped to production (AC13's "living" page is a dev tool).
+    ...(import.meta.env.DEV ? [{ path: '/design-system/tokens', element: <TokensPage /> }] : []),
     {
       path: '/portal/*',
       element: (

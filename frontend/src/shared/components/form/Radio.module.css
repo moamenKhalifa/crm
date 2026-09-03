@@ -1,0 +1,16 @@
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+  color: var(--color-text-default);
+}
+
+.radio {
+  accent-color: var(--color-action);
+}
+
+.radio:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}

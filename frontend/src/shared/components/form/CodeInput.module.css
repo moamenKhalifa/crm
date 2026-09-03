@@ -1,0 +1,8 @@
+/* Narrows just the bordered control — not the `.field` wrapper itself, which
+   would collide in specificity with `TextInput.module.css`'s
+   `[data-max-width]` rules — to a content-driven width for a short code. */
+.code .inputWrapper {
+  max-inline-size: 12ch;
+  font-family: monospace;
+  letter-spacing: 0.2em;
+}

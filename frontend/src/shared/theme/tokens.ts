@@ -1,26 +1,89 @@
-export interface ColorTokens {
-  primary: string;
-  primaryHover: string;
-  primaryContrast: string;
-  secondary: string;
-  secondaryHover: string;
-  secondaryContrast: string;
-  danger: string;
-  dangerHover: string;
-  dangerContrast: string;
-  success: string;
-  warning: string;
-  info: string;
-  bg: string;
-  surface: string;
-  surfaceMuted: string;
-  text: string;
+// Raw scale — never referenced by components. Semantic aliases below re-point
+// here; a component that references `rawScale` (or `--blue-600` etc.)
+// directly is a defect (see the design-system intake).
+export const rawScale = {
+  blue600: '#2563EB',
+  blue700: '#1D4ED8',
+  blue50: '#EFF6FF',
+  neutral900: '#101828',
+  neutral700: '#344054',
+  neutral500: '#667085',
+  neutral400: '#858FA0',
+  neutral300: '#D0D5DD',
+  neutral200: '#E4E7EC',
+  neutral100: '#F2F4F7',
+  neutral50: '#F9FAFB',
+  white: '#FFFFFF',
+  green700: '#027A48',
+  green50: '#ECFDF3',
+  amber700: '#B54708',
+  amber50: '#FFFAEB',
+  red700: '#B42318',
+  red600: '#D92D20',
+  red50: '#FEF3F2',
+} as const;
+
+export type RawScale = typeof rawScale;
+
+export interface SemanticColorAliases {
+  action: string;
+  actionHover: string;
+  actionSubtle: string;
+  textStrong: string;
+  textDefault: string;
   textMuted: string;
-  border: string;
-  focus: string;
+  textDisabled: string;
+  borderInput: string;
+  borderSubtle: string;
+  surface: string;
+  surfaceSunken: string;
+  surfaceDisabled: string;
+  success: string;
+  successBg: string;
+  warning: string;
+  warningBg: string;
+  danger: string;
+  dangerBg: string;
+  dangerSolid: string;
 }
 
+/** Legacy re-export — `ColorTokens` is now shaped like `SemanticColorAliases`. */
+export type ColorTokens = SemanticColorAliases;
+
+export const lightAliases: SemanticColorAliases = {
+  action: rawScale.blue600,
+  actionHover: rawScale.blue700,
+  actionSubtle: rawScale.blue50,
+  textStrong: rawScale.neutral900,
+  textDefault: rawScale.neutral700,
+  textMuted: rawScale.neutral500,
+  textDisabled: rawScale.neutral500,
+  borderInput: rawScale.neutral400,
+  borderSubtle: rawScale.neutral200,
+  surface: rawScale.white,
+  surfaceSunken: rawScale.neutral50,
+  surfaceDisabled: rawScale.neutral100,
+  success: rawScale.green700,
+  successBg: rawScale.green50,
+  warning: rawScale.amber700,
+  warningBg: rawScale.amber50,
+  danger: rawScale.red700,
+  dangerBg: rawScale.red50,
+  dangerSolid: rawScale.red600,
+};
+
 export interface SpacingScale {
+  s1: string;
+  s2: string;
+  s3: string;
+  s4: string;
+  s5: string;
+  s6: string;
+  s7: string;
+  s8: string;
+  s9: string;
+  s10: string;
+  // Legacy aliases — each resolves to one of the steps above.
   xxs: string;
   xs: string;
   sm: string;
@@ -34,29 +97,47 @@ export interface RadiusScale {
   sm: string;
   md: string;
   lg: string;
+  full: string;
+  /** Legacy alias for `full`. */
   pill: string;
 }
 
 export interface ShadowScale {
+  xs: string;
   sm: string;
   md: string;
   lg: string;
 }
 
+export interface MotionTokens {
+  durationFast: string;
+  durationBase: string;
+  easeOut: string;
+  focusRing: string;
+  focusRingOffset: string;
+}
+
+export interface TypeStep {
+  xs: string;
+  sm: string;
+  base: string;
+  lg: string;
+  xl: string;
+  '2xl': string;
+  '3xl': string;
+}
+
 export interface TypographyTokens {
-  fontFamilyBase: string;
-  fontFamilyHeading: string;
-  fontFamilyMono: string;
-  fontSizeXs: string;
-  fontSizeSm: string;
-  fontSizeMd: string;
-  fontSizeLg: string;
-  fontSizeXl: string;
-  fontWeightRegular: number;
-  fontWeightMedium: number;
-  fontWeightBold: number;
-  lineHeightBase: number;
-  lineHeightTight: number;
+  fontFamilyLatin: string;
+  fontFamilyArabic: string;
+  weightRegular: number;
+  weightMedium: number;
+  weightBold: number;
+  size: TypeStep;
+  lineHeightLatin: TypeStep;
+  lineHeightArabic: TypeStep;
+  /** Arabic reads optically smaller than Latin at the same pixel size. */
+  arabicSizeAdjust: number;
 }
 
 export interface Breakpoints {
@@ -68,45 +149,68 @@ export interface Breakpoints {
 
 export interface ThemeTokens {
   name: 'light' | 'dark';
-  colors: ColorTokens;
+  colors: SemanticColorAliases;
   spacing: SpacingScale;
   radii: RadiusScale;
   shadows: ShadowScale;
   typography: TypographyTokens;
+  motion: MotionTokens;
   breakpoints: Breakpoints;
 }
 
 const spacing: SpacingScale = {
-  xxs: '2px',
-  xs: '4px',
-  sm: '8px',
-  md: '12px',
-  lg: '16px',
-  xl: '24px',
-  xxl: '32px',
+  s1: '4px',
+  s2: '8px',
+  s3: '12px',
+  s4: '16px',
+  s5: '20px',
+  s6: '24px',
+  s7: '32px',
+  s8: '40px',
+  s9: '48px',
+  s10: '64px',
+  xxs: 'var(--space-1)',
+  xs: 'var(--space-2)',
+  sm: 'var(--space-3)',
+  md: 'var(--space-4)',
+  lg: 'var(--space-5)',
+  xl: 'var(--space-6)',
+  xxl: 'var(--space-8)',
 };
 
 const radii: RadiusScale = {
-  sm: '4px',
-  md: '6px',
+  sm: '6px',
+  md: '8px',
   lg: '12px',
-  pill: '999px',
+  full: '9999px',
+  pill: 'var(--radius-full)',
+};
+
+const shadows: ShadowScale = {
+  xs: '0 1px 2px rgba(16, 24, 40, 0.05)',
+  sm: '0 1px 3px rgba(16, 24, 40, 0.10)',
+  md: '0 4px 8px rgba(16, 24, 40, 0.10)',
+  lg: '0 12px 24px rgba(16, 24, 40, 0.12)',
+};
+
+const motion: MotionTokens = {
+  durationFast: '150ms',
+  durationBase: '200ms',
+  easeOut: 'cubic-bezier(0.2, 0, 0, 1)',
+  focusRing: '2px solid var(--color-action)',
+  focusRingOffset: '2px',
 };
 
 const typography: TypographyTokens = {
-  fontFamilyBase: "system-ui, -apple-system, 'Segoe UI', sans-serif",
-  fontFamilyHeading: "system-ui, -apple-system, 'Segoe UI', sans-serif",
-  fontFamilyMono: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-  fontSizeXs: '12px',
-  fontSizeSm: '13px',
-  fontSizeMd: '14px',
-  fontSizeLg: '16px',
-  fontSizeXl: '20px',
-  fontWeightRegular: 400,
-  fontWeightMedium: 500,
-  fontWeightBold: 700,
-  lineHeightBase: 1.4,
-  lineHeightTight: 1.2,
+  fontFamilyLatin: "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif",
+  fontFamilyArabic: "'IBM Plex Sans Arabic', 'Noto Sans Arabic', Tahoma, sans-serif",
+  weightRegular: 400,
+  weightMedium: 500,
+  weightBold: 600,
+  size: { xs: '12px', sm: '14px', base: '16px', lg: '18px', xl: '20px', '2xl': '24px', '3xl': '30px' },
+  lineHeightLatin: { xs: '18px', sm: '20px', base: '24px', lg: '28px', xl: '30px', '2xl': '32px', '3xl': '38px' },
+  lineHeightArabic: { xs: '20px', sm: '24px', base: '28px', lg: '32px', xl: '34px', '2xl': '38px', '3xl': '44px' },
+  arabicSizeAdjust: 1.05,
 };
 
 const breakpoints: Breakpoints = {
@@ -118,68 +222,26 @@ const breakpoints: Breakpoints = {
 
 export const lightTheme: ThemeTokens = {
   name: 'light',
-  colors: {
-    primary: '#2563eb',
-    primaryHover: '#1d4ed8',
-    primaryContrast: '#ffffff',
-    secondary: '#64748b',
-    secondaryHover: '#475569',
-    secondaryContrast: '#ffffff',
-    danger: '#dc2626',
-    dangerHover: '#b91c1c',
-    dangerContrast: '#ffffff',
-    success: '#16a34a',
-    warning: '#d97706',
-    info: '#0891b2',
-    bg: '#ffffff',
-    surface: '#f8fafc',
-    surfaceMuted: '#f1f5f9',
-    text: '#0f172a',
-    textMuted: '#64748b',
-    border: '#e2e8f0',
-    focus: '#2563eb',
-  },
+  colors: lightAliases,
   spacing,
   radii,
-  shadows: {
-    sm: '0 1px 2px rgba(15, 23, 42, 0.06)',
-    md: '0 4px 6px rgba(15, 23, 42, 0.10)',
-    lg: '0 10px 15px rgba(15, 23, 42, 0.15)',
-  },
+  shadows,
   typography,
+  motion,
   breakpoints,
 };
 
 export const darkTheme: ThemeTokens = {
   name: 'dark',
-  colors: {
-    primary: '#3b82f6',
-    primaryHover: '#60a5fa',
-    primaryContrast: '#0f172a',
-    secondary: '#94a3b8',
-    secondaryHover: '#cbd5e1',
-    secondaryContrast: '#0f172a',
-    danger: '#f87171',
-    dangerHover: '#fca5a5',
-    dangerContrast: '#450a0a',
-    success: '#4ade80',
-    warning: '#fbbf24',
-    info: '#22d3ee',
-    bg: '#0f172a',
-    surface: '#1e293b',
-    surfaceMuted: '#334155',
-    text: '#f1f5f9',
-    textMuted: '#94a3b8',
-    border: '#334155',
-    focus: '#60a5fa',
-  },
+  // TODO: dark alias values (out of scope for Story 10). Reusing the light
+  // aliases keeps `setThemeName('dark')` wired end-to-end — switching this
+  // to a real dark palette later is exactly "supply a second
+  // `SemanticColorAliases` object", not a component rewrite (AC12).
+  colors: lightAliases,
   spacing,
   radii,
-  shadows: {
-    sm: '0 1px 2px rgba(0, 0, 0, 0.30)',
-    md: '0 4px 6px rgba(0, 0, 0, 0.40)',
-    lg: '0 10px 15px rgba(0, 0, 0, 0.50)',
-  },
+  shadows,
   typography,
+  motion,
   breakpoints,
 };

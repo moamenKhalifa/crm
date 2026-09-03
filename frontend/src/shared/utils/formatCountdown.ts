@@ -1,0 +1,10 @@
+/** Formats a whole-second countdown as `mm:ss` once it reaches a minute, else `<n>s`. */
+export function formatCountdown(totalSeconds: number): string {
+  const clamped = Math.max(0, Math.floor(totalSeconds));
+  if (clamped < 60) {
+    return `${clamped}s`;
+  }
+  const minutes = Math.floor(clamped / 60);
+  const seconds = clamped % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}

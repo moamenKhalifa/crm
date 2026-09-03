@@ -1,16 +1,46 @@
+/* Self-hosting the actual Inter / IBM Plex Sans Arabic .woff2 binaries is
+   out of reach in this environment (no binary asset fetch) — Google Fonts'
+   hosted stylesheet is used instead. It serves the same files as
+   `@font-face` + `font-display: swap` under the hood, so the fallback-chain
+   and swap behaviour this story requires (AC7) still hold; swap to a
+   self-hosted `@font-face` block under `src/assets/fonts/` once the binaries
+   are vendored. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap');
+
 :root {
   color-scheme: light dark;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* CSS variables injected by ThemeProvider (src/shared/theme) — these are
      fallbacks only, used before the provider mounts or if it is absent. */
-  --color-bg: #fff;
-  --color-text: #111;
-  --color-primary: #2563eb;
-  --space-md: 12px;
-  --radius-md: 6px;
-  --font-size-md: 14px;
-  --line-height-base: 1.4;
+  --color-action: #2563eb;
+  --color-text-default: #344054;
+  --color-text-muted: #667085;
+  --color-surface: #fff;
+  --color-surface-sunken: #f9fafb;
+  --color-border-subtle: #e4e7ec;
+  --focus-ring: 2px solid #2563eb;
+  --focus-ring-offset: 2px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --line-height-sm-latin: 20px;
+  --line-height-sm-arabic: 24px;
+  --line-height-sm: var(--line-height-sm-latin);
+  --font-family-latin: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-family-arabic: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', Tahoma, sans-serif;
+  --font-family-base: var(--font-family-latin);
+  --space-4: 16px;
+  --radius-md: 8px;
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Legacy fallback names, still referenced pre-mount by a handful of call sites. */
+  --color-bg: var(--color-surface);
+  --color-text: var(--color-text-default);
+  --color-primary: var(--color-action);
+  --space-md: var(--space-4);
+  --font-size-md: var(--text-sm);
+  --line-height-base: var(--line-height-sm);
 }
 
 * {
@@ -25,11 +55,49 @@ html[dir='ltr'] {
   direction: ltr;
 }
 
+/* Locale-scoped switch: `data-locale` is written by
+   `applyDocumentDirection()` (see shared/i18n/documentDirection.ts) before
+   React's first render, so this resolves before paint — no layout shift
+   (AC7, AC9). */
+html[data-locale='en'] {
+  --font-family-base: var(--font-family-latin);
+  --line-height-xs: var(--line-height-xs-latin);
+  --line-height-sm: var(--line-height-sm-latin);
+  --line-height-base: var(--line-height-base-latin);
+  --line-height-lg: var(--line-height-lg-latin);
+  --line-height-xl: var(--line-height-xl-latin);
+  --line-height-2xl: var(--line-height-2xl-latin);
+  --line-height-3xl: var(--line-height-3xl-latin);
+}
+
+html[data-locale='ar'] {
+  --font-family-base: var(--font-family-arabic);
+  --line-height-xs: var(--line-height-xs-arabic);
+  --line-height-sm: var(--line-height-sm-arabic);
+  --line-height-base: var(--line-height-base-arabic);
+  --line-height-lg: var(--line-height-lg-arabic);
+  --line-height-xl: var(--line-height-xl-arabic);
+  --line-height-2xl: var(--line-height-2xl-arabic);
+  --line-height-3xl: var(--line-height-3xl-arabic);
+  font-size-adjust: 0.5; /* Arabic reads optically smaller — see the intake's font-family table. */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-size: var(--font-size-md);
-  line-height: var(--line-height-base);
+  background: var(--color-surface);
+  color: var(--color-text-default);
+  font-family: var(--font-family-base);
+  font-size: var(--text-sm);
+  line-height: var(--line-height-sm);
 }

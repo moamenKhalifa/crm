@@ -1,33 +1,28 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 
-import { HttpClient, type AuthHeaderSupplier } from './httpClient';
+import { HttpClient } from './httpClient';
 
 const ApiClientContext = createContext<HttpClient | undefined>(undefined);
 
 export interface ApiClientProviderProps {
   children: ReactNode;
   baseUrl: string;
-  getAuthorizationHeader?: AuthHeaderSupplier;
-  onUnauthorized?: () => Promise<boolean>;
+  publicEndpoints?: readonly string[];
+  onSessionExpired?: () => Promise<boolean>;
   onForbidden?: () => void;
 }
 
 /**
- * Takes `baseUrl`/`getAuthorizationHeader`/`onUnauthorized`/`onForbidden` as
- * props rather than reading config or auth context directly — `shared/`
- * must not import from `app/` or `features/`. `app/providers/AppProviders.tsx`
- * supplies these values.
+ * Takes `baseUrl`/`onSessionExpired`/`onForbidden`/`publicEndpoints` as props
+ * rather than reading config or auth context directly — `shared/` must not
+ * import from `app/` or `features/`. `app/providers/AppProviders.tsx`
+ * supplies these values. The access token itself is read by `HttpClient`
+ * straight from the module-scoped `tokenStore`, not passed through here.
  */
-export function ApiClientProvider({
-  children,
-  baseUrl,
-  getAuthorizationHeader,
-  onUnauthorized,
-  onForbidden,
-}: ApiClientProviderProps) {
+export function ApiClientProvider({ children, baseUrl, publicEndpoints, onSessionExpired, onForbidden }: ApiClientProviderProps) {
   const client = useMemo(
-    () => new HttpClient({ baseUrl, getAuthorizationHeader, onUnauthorized, onForbidden }),
-    [baseUrl, getAuthorizationHeader, onUnauthorized, onForbidden],
+    () => new HttpClient({ baseUrl, publicEndpoints, onSessionExpired, onForbidden }),
+    [baseUrl, publicEndpoints, onSessionExpired, onForbidden],
   );
 
   return <ApiClientContext.Provider value={client}>{children}</ApiClientContext.Provider>;
