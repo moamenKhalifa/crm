@@ -8,6 +8,33 @@ import { __resetRefreshBridgeForTests } from '@features/authentication/refreshBr
 
 expect.extend(toHaveNoViolations);
 
+// jsdom does not implement `window.matchMedia` at all. `ThemeProvider`
+// already tolerates that (its `prefers-color-scheme` check is wrapped in a
+// try/catch, falling back to `false`), but `useBreakpoint()` calls it
+// directly and has no such guard — every test that renders a component
+// using `useBreakpoint()` (namely `DataTable`) would otherwise crash with
+// "window.matchMedia is not a function". Polyfill a default here: `true`
+// for `min-width` queries (so components default to the "wide" bucket,
+// matching a real desktop test viewport) and `false` for everything else
+// (preserving the pre-existing "light theme" default `prefersDark()` relied
+// on when `matchMedia` was simply undefined). Tests that need a specific
+// breakpoint still override this per-file via `vi.stubGlobal('matchMedia', ...)`
+// (see `useBreakpoint.test.tsx`) — `vi.unstubAllGlobals()` correctly restores
+// this default afterwards since it's a plain assignment, not a stub itself.
+if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
+  window.matchMedia = ((query: string) =>
+    ({
+      matches: /min-width/.test(query),
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList) as typeof window.matchMedia;
+}
+
 // `app/configuration/env.ts` builds `appConfig` eagerly at import time (so
 // consumers get a plain typed object, not a hook), which requires the
 // VITE_* vars to already be set. No .env file exists in the test run, so

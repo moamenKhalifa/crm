@@ -1,0 +1,11 @@
+.page {
+  padding: var(--space-xl);
+  color: var(--color-text-default);
+}
+
+.mobilePreview {
+  max-inline-size: 360px;
+  border: 1px dashed var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
