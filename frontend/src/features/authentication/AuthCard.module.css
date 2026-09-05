@@ -13,7 +13,7 @@
   padding: var(--space-lg);
 }
 
-.localeSwitcher {
+.publicHeader {
   position: absolute;
   inset-block-start: var(--space-lg);
   inset-inline-end: var(--space-lg);

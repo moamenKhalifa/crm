@@ -8,7 +8,8 @@ import { Checkbox } from '@shared/components/form/Checkbox';
 import { EmailInput } from '@shared/components/form/EmailInput';
 import { FormActions } from '@shared/components/form/FormActions';
 import { PasswordInput } from '@shared/components/form/PasswordInput';
-import { useLocale, useT } from '@shared/i18n';
+import { LanguageSwitcher } from '@shared/components/navigation/LanguageSwitcher';
+import { useT } from '@shared/i18n';
 import { defaultBranding } from '@shared/theme';
 import { formatCountdown } from '@shared/utils';
 import { useForm } from '@shared/validation';
@@ -86,7 +87,6 @@ function resolveSubmitErrorMessage(
 
 export default function SignInPage() {
   const { t } = useT();
-  const { locale, setLocale } = useLocale();
   const { signIn, status, roles } = useAuth();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -217,14 +217,9 @@ export default function SignInPage() {
 
   return (
     <div className={styles.page}>
-      <nav className={styles.localeSwitcher} aria-label={t('auth.localeSwitcher.label')}>
-        <button type="button" onClick={() => setLocale('en')} aria-pressed={locale === 'en'}>
-          {t('auth.localeSwitcher.en')}
-        </button>
-        <button type="button" onClick={() => setLocale('ar')} aria-pressed={locale === 'ar'}>
-          {t('auth.localeSwitcher.ar')}
-        </button>
-      </nav>
+      <header role="banner" className={styles.publicHeader}>
+        <LanguageSwitcher />
+      </header>
 
       <section className={styles.card}>
         <img className={styles.logo} src={defaultBranding.logoUrl} alt={defaultBranding.logoAlt} />
@@ -235,7 +230,9 @@ export default function SignInPage() {
           </p>
         )}
 
-        <h1 className={styles.heading}>{t('auth.login.title')}</h1>
+        <h1 id="page-heading" tabIndex={-1} className={styles.heading}>
+          {t('auth.login.title')}
+        </h1>
 
         <form className={styles.form} onSubmit={handleSubmit} noValidate>
           <p className={styles.requiredNote}>{t('forms.requiredNote')}</p>

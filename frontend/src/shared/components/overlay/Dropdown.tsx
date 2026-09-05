@@ -21,13 +21,17 @@ export interface DropdownProps {
   trigger: ReactNode;
   items: DropdownItem[];
   align?: 'start' | 'end';
+  /** Overrides the trigger button's accessible name — otherwise it's derived from `trigger`'s own text content. */
+  triggerAriaLabel?: string;
+  /** Appended to the trigger button's own class, for a caller-specific layout (e.g. an avatar + name + chevron row). */
+  triggerClassName?: string;
 }
 
 function isDivider(item: DropdownItem): item is DropdownDividerItem {
   return 'divider' in item && item.divider === true;
 }
 
-export function Dropdown({ trigger, items, align = 'start' }: DropdownProps) {
+export function Dropdown({ trigger, items, align = 'start', triggerAriaLabel, triggerClassName }: DropdownProps) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -78,10 +82,11 @@ export function Dropdown({ trigger, items, align = 'start' }: DropdownProps) {
     <div className={styles.container} ref={containerRef} onKeyDown={handleKeyDown}>
       <button
         type="button"
-        className={styles.trigger}
+        className={[styles.trigger, triggerClassName].filter(Boolean).join(' ')}
         onClick={() => setOpen((value) => !value)}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label={triggerAriaLabel}
       >
         {trigger}
       </button>

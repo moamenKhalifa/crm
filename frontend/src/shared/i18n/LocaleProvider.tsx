@@ -14,6 +14,11 @@ export interface LocaleContextValue {
 
 const LocaleContext = createContext<LocaleContextValue | undefined>(undefined);
 
+// Read only at mount — a locale change in another tab does not propagate to
+// this one until it reloads (or itself calls `setLocale`, which overwrites
+// the stored value). Acceptable per AC11 ("applied on next visit"); a
+// cross-tab `storage` event listener would close this gap but isn't
+// currently needed.
 function readStoredLocale(): Locale | null {
   try {
     const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
@@ -43,6 +48,11 @@ export function LocaleProvider({ children, defaultLocale = 'en' }: LocaleProvide
     } catch {
       // Storage disabled (e.g. Safari private mode) — locale still applies for this session.
     }
+    // TODO(IA-6): also persist to the signed-in user's profile via
+    // `PATCH /identity/users/me/preferences` once that endpoint ships (no
+    // such route exists in `backend/app/modules/identity_access/api/routers/`
+    // today). Until then, `localStorage` already satisfies AC11's "applied
+    // on next visit" for both signed-out and signed-in users on this device.
   };
 
   const value = useMemo<LocaleContextValue>(

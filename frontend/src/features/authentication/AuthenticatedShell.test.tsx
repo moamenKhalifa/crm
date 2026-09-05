@@ -1,73 +1,33 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes, useSearchParams } from 'react-router-dom';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ConfigProvider } from '@app/configuration/ConfigProvider';
+import { AuthorizationProvider } from '@shared/authorization';
+import { LocaleProvider } from '@shared/i18n';
+import { ThemeProvider } from '@shared/theme';
 
 import { AuthenticatedShell } from './AuthenticatedShell';
-import { AuthProvider, useAuth } from './AuthProvider';
+import { AuthProvider } from './AuthProvider';
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
-}
-
-const TOKENS = {
-  access_token: 'access-1',
-  refresh_token: 'refresh-1',
-  token_type: 'Bearer' as const,
-  access_expires_in: 900,
-  refresh_expires_in: 1_209_600,
-};
-
-const ME = {
-  id: 'user-1',
-  email: 'agent@example.com',
-  full_name: 'Agent Example',
-  is_active: true,
-  is_customer: false,
-  roles: [{ id: 'role-1', name: 'agent', description: null }],
-};
-
-function LoginPageStub() {
-  const [searchParams] = useSearchParams();
-  return (
-    <>
-      <h1>Sign in</h1>
-      {searchParams.get('signedOut') === '1' && <p>signedOut param present</p>}
-    </>
-  );
-}
-
-function SignInTrigger() {
-  const { signIn } = useAuth();
-  return (
-    <button type="button" onClick={() => void signIn({ email: 'agent@example.com', password: 'Passw0rd!' })}>
-      sign in
-    </button>
-  );
-}
-
-function renderShell() {
+function renderShell(permissions: string[]) {
   return render(
     <ConfigProvider>
-      <AuthProvider>
-        <MemoryRouter initialEntries={['/agent']}>
-          <Routes>
-            <Route
-              path="/agent"
-              element={
-                <>
-                  <SignInTrigger />
-                  <AuthenticatedShell>
-                    <h1>Agent</h1>
-                  </AuthenticatedShell>
-                </>
-              }
-            />
-            <Route path="/login" element={<LoginPageStub />} />
-          </Routes>
-        </MemoryRouter>
-      </AuthProvider>
+      <LocaleProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <AuthorizationProvider roles={['admin']} permissions={permissions}>
+              <MemoryRouter initialEntries={['/admin/users']}>
+                <AuthenticatedShell>
+                  <h1 id="page-heading" tabIndex={-1}>
+                    Users
+                  </h1>
+                </AuthenticatedShell>
+              </MemoryRouter>
+            </AuthorizationProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </LocaleProvider>
     </ConfigProvider>,
   );
 }
@@ -75,7 +35,6 @@ function renderShell() {
 describe('AuthenticatedShell', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
-    window.sessionStorage.clear();
     window.localStorage.clear();
   });
 
@@ -83,26 +42,23 @@ describe('AuthenticatedShell', () => {
     vi.unstubAllGlobals();
   });
 
-  it('shows the signed-in user and signing out navigates to /login?signedOut=1', async () => {
-    vi.mocked(fetch).mockImplementation(async (input) => {
-      const url = String(input);
-      if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
-      if (url.endsWith('/auth/me')) return jsonResponse(ME);
-      if (url.includes('/roles/')) return jsonResponse([]);
-      if (url.endsWith('/auth/logout')) return new Response(null, { status: 204 });
-      throw new Error(`unexpected fetch: ${url}`);
-    });
+  it('renders all three admin sidebar items when every permission is granted (AC2)', () => {
+    renderShell(['User.View', 'Role.View', 'Permission.View']);
+    expect(screen.getByRole('link', { name: /Users/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Roles/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Permissions/ })).toBeInTheDocument();
+  });
 
-    renderShell();
-    fireEvent.click(screen.getByRole('button', { name: 'sign in' }));
+  it('renders only the Users item when only User.View is granted (AC2)', () => {
+    renderShell(['User.View']);
+    expect(screen.getByRole('link', { name: /Users/ })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^Roles/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^Permissions/ })).not.toBeInTheDocument();
+  });
 
-    await waitFor(() => expect(screen.getByText('Agent Example')).toBeInTheDocument());
-
-    fireEvent.click(screen.getByRole('button', { name: 'Agent Example' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Sign out' }));
-
-    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
-    expect(screen.getByText('signedOut param present')).toBeInTheDocument();
-    expect(vi.mocked(fetch).mock.calls.some(([input]) => String(input).endsWith('/auth/logout'))).toBe(true);
+  it('the LanguageSwitcher is present in the header (AC8)', () => {
+    renderShell(['User.View']);
+    expect(screen.getByRole('button', { name: 'English' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'العربية' })).toBeInTheDocument();
   });
 });

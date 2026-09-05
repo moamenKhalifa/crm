@@ -34,6 +34,7 @@ module.exports = {
           '0',
           '-1px', // the standard visually-hidden/sr-only clip-and-shrink trick — not a spacing-scale value
           '0.01ms', // prefers-reduced-motion: "near-zero but non-zero" so transitionend/animationend still fire
+          '1.2', // unitless tight line-height for a compact two-line label stack (e.g. UserMenu's name+role) — not a type-scale value
           'auto',
           '50%',
           '100%',

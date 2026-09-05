@@ -1,7 +1,7 @@
 .header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--space-md);
   padding-inline: var(--space-lg);
   padding-block: var(--space-sm);
   background: var(--color-surface);
@@ -9,10 +9,17 @@
   box-shadow: var(--shadow-sm);
 }
 
-.brand {
+.brandLink {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+}
+
+.brandLink:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .logo {
@@ -29,4 +36,5 @@
   display: flex;
   align-items: center;
   gap: var(--space-md);
+  margin-inline-start: auto;
 }

@@ -3,14 +3,21 @@
   flex-direction: column;
   gap: var(--space-sm);
   inline-size: 220px;
-  min-block-size: 100vh;
+  min-block-size: 100%;
   padding: var(--space-md);
   background: var(--color-surface-sunken);
   border-inline-end: 1px solid var(--color-border-subtle);
+  transition: inline-size var(--duration-base) var(--ease-out);
 }
 
 .sidebar[data-collapsed] {
   inline-size: 64px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
+  }
 }
 
 .collapseButton {
@@ -22,27 +29,125 @@
   color: var(--color-text-default);
 }
 
+.collapseButton:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.groupLabel {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  padding-inline: var(--space-sm);
+  margin: 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 .link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
   text-decoration: none;
   color: var(--color-text-default);
-  display: block;
   padding-inline: var(--space-sm);
   padding-block: var(--space-xs);
   border-radius: var(--radius-md);
+  border-inline-start: 3px solid transparent;
 }
 
 .link:hover {
   background: var(--color-surface);
 }
 
-.collapseButton:focus-visible,
 .link:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
 
+/* More than colour (AC3): a 3px inline-start bar plus a weight change. */
 .linkActive {
   background: var(--color-surface);
   color: var(--color-action);
   font-weight: var(--font-weight-medium);
+  border-inline-start-color: var(--color-action);
+}
+
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: var(--text-base);
+}
+
+/* Collapsed-state label: visually clipped, revealed as a themed tooltip on
+   hover/keyboard focus — also the link's sole accessible-name source, so it
+   is never `aria-hidden` (G5). */
+.tooltip {
+  position: absolute;
+  inset-inline-start: calc(100% + var(--space-xs));
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  inline-size: max-content;
+  max-inline-size: 200px;
+  padding-inline: var(--space-sm);
+  padding-block: var(--space-xxs);
+  border-radius: var(--radius-sm);
+  background: var(--color-text-strong);
+  color: var(--color-surface);
+  font-size: var(--text-xs);
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+  clip-path: inset(50%);
+  pointer-events: none;
+}
+
+.link:hover .tooltip,
+.link:focus-visible .tooltip {
+  clip-path: none;
+}
+
+.drawerBackdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in oklab, black 40%, transparent);
+  z-index: 200;
+}
+
+.drawer {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: min(280px, 80vw);
+  padding: var(--space-md);
+  background: var(--color-surface-sunken);
+  border-inline-end: 1px solid var(--color-border-subtle);
+  box-shadow: var(--shadow-lg);
+  overflow-y: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link {
+    transition: none;
+  }
 }

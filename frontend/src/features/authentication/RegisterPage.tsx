@@ -9,6 +9,7 @@ import { FormActions } from '@shared/components/form/FormActions';
 import { FormError } from '@shared/components/form/FormError';
 import { PasswordInput } from '@shared/components/form/PasswordInput';
 import { TextInput } from '@shared/components/form/TextInput';
+import { LanguageSwitcher } from '@shared/components/navigation/LanguageSwitcher';
 import { useUnsavedChangesGuard } from '@shared/hooks';
 import { useT } from '@shared/i18n';
 import { defaultBranding } from '@shared/theme';
@@ -116,9 +117,15 @@ export default function RegisterPage() {
 
   return (
     <div className={styles.page}>
+      <header role="banner" className={styles.publicHeader}>
+        <LanguageSwitcher />
+      </header>
+
       <section className={styles.card}>
         <img className={styles.logo} src={defaultBranding.logoUrl} alt={defaultBranding.logoAlt} />
-        <h1 className={styles.heading}>{t('auth.register.title')}</h1>
+        <h1 id="page-heading" tabIndex={-1} className={styles.heading}>
+          {t('auth.register.title')}
+        </h1>
 
         <form className={styles.form} onSubmit={handleSubmit} noValidate>
           <p className={styles.requiredNote}>{t('forms.requiredNote')}</p>

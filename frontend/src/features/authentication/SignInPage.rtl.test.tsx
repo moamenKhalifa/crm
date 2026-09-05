@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ConfigProvider } from '@app/configuration/ConfigProvider';
 import { LocaleProvider } from '@shared/i18n';
+import { ThemeProvider } from '@shared/theme';
 
 import { AuthProvider } from './AuthProvider';
 import SignInPage from './SignInPage';
@@ -12,13 +13,15 @@ function renderSignInAr() {
   return render(
     <ConfigProvider>
       <LocaleProvider defaultLocale="ar">
-        <AuthProvider>
-          <MemoryRouter initialEntries={['/login']}>
-            <Routes>
-              <Route path="/login" element={<SignInPage />} />
-            </Routes>
-          </MemoryRouter>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <MemoryRouter initialEntries={['/login']}>
+              <Routes>
+                <Route path="/login" element={<SignInPage />} />
+              </Routes>
+            </MemoryRouter>
+          </AuthProvider>
+        </ThemeProvider>
       </LocaleProvider>
     </ConfigProvider>,
   );

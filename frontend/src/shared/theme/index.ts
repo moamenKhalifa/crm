@@ -14,7 +14,7 @@ export type {
   TypeStep,
   Breakpoints,
 } from './tokens';
-export { defaultBranding } from './branding';
+export { defaultBranding, versionedLogoUrl } from './branding';
 export type { Branding } from './branding';
 export { useBreakpoint, mediaQuery } from './useBreakpoint';
 export type { BreakpointName } from './useBreakpoint';

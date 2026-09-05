@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ConfigProvider } from '@app/configuration/ConfigProvider';
 import { ApiClientProvider } from '@shared/api';
+import { LocaleProvider } from '@shared/i18n';
+import { ThemeProvider } from '@shared/theme';
 
 import { AuthProvider } from './AuthProvider';
 import RegisterPage from './RegisterPage';
@@ -32,17 +34,21 @@ const ME = {
 function renderRegister() {
   return render(
     <ConfigProvider>
-      <AuthProvider>
-        <ApiClientProvider baseUrl="/api">
-          <MemoryRouter initialEntries={['/register']}>
-            <Routes>
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/agent" element={<h1>Agent Landing</h1>} />
-              <Route path="/sign-in" element={<h1>Sign in</h1>} />
-            </Routes>
-          </MemoryRouter>
-        </ApiClientProvider>
-      </AuthProvider>
+      <LocaleProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ApiClientProvider baseUrl="/api">
+              <MemoryRouter initialEntries={['/register']}>
+                <Routes>
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/agent" element={<h1>Agent Landing</h1>} />
+                  <Route path="/sign-in" element={<h1>Sign in</h1>} />
+                </Routes>
+              </MemoryRouter>
+            </ApiClientProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </LocaleProvider>
     </ConfigProvider>,
   );
 }
@@ -72,6 +78,13 @@ describe('RegisterPage', () => {
     expect(screen.getByLabelText(/Email/)).toBeInTheDocument();
     expect(screen.getByLabelText(/^Password/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Confirm password/)).toBeInTheDocument();
+  });
+
+  it('renders the LanguageSwitcher above the card, in a banner landmark (AC8)', () => {
+    renderRegister();
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'English' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'العربية' })).toBeInTheDocument();
   });
 
   it('blocks submit on an empty form', async () => {
