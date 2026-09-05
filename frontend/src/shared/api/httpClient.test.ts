@@ -72,6 +72,28 @@ describe('HttpClient', () => {
     } satisfies Partial<ApiError>);
   });
 
+  it('calls onForbidden on a 403', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ code: 'FORBIDDEN', message: 'nope' }), { status: 403 }));
+    const onForbidden = vi.fn();
+    const client = new HttpClient({ baseUrl: '/api', onForbidden });
+
+    await expect(client.get('/identity/roles')).rejects.toMatchObject({ status: 403 });
+
+    expect(onForbidden).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips onForbidden on a 403 when the caller passes suppressForbiddenHandling (optional picker lookups degrade locally instead of a global toast)', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ code: 'FORBIDDEN', message: 'nope' }), { status: 403 }));
+    const onForbidden = vi.fn();
+    const client = new HttpClient({ baseUrl: '/api', onForbidden });
+
+    await expect(
+      client.get('/identity/roles', undefined, { suppressForbiddenHandling: true }),
+    ).rejects.toMatchObject({ status: 403 });
+
+    expect(onForbidden).not.toHaveBeenCalled();
+  });
+
   it('unwraps the legacy backend error envelope { error: { code, message } }', async () => {
     vi.mocked(fetch).mockResolvedValue(
       new Response(JSON.stringify({ error: { code: 'duplicate_account', message: 'already exists' } }), {

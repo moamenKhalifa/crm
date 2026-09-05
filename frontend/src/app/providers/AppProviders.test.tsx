@@ -25,6 +25,7 @@ const ME = {
   is_active: true,
   is_customer: false,
   roles: [{ id: 'role-1', name: 'agent', description: null }],
+  permissions: [] as string[],
 };
 
 function ProtectedCaller() {
@@ -62,7 +63,6 @@ describe('AppProviders', () => {
         return jsonResponse({ error: { code: 'invalid_refresh_token', message: 'nope' } }, 401);
       }
       if (url.endsWith('/auth/me')) return jsonResponse(ME);
-      if (url.includes('/roles/')) return jsonResponse([]);
       if (url.endsWith('/auth/logout')) return new Response(null, { status: 204 });
       if (url.endsWith('/protected')) {
         return jsonResponse({ error: { code: 'invalid_credentials', message: 'expired' } }, 401);

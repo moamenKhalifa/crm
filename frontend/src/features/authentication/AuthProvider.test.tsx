@@ -28,6 +28,7 @@ const ME = {
   is_active: true,
   is_customer: false,
   roles: [{ id: 'role-1', name: 'agent', description: null }],
+  permissions: [] as string[],
 };
 
 function renderAuth(strict = false) {
@@ -74,8 +75,7 @@ describe('AuthProvider', () => {
     vi.mocked(fetch).mockImplementation(async (input) => {
       const url = String(input);
       if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
-      if (url.endsWith('/auth/me')) return jsonResponse(ME);
-      if (url.includes('/roles/')) return jsonResponse([{ id: 'perm-1', code: 'User.View', description: null }]);
+      if (url.endsWith('/auth/me')) return jsonResponse({ ...ME, permissions: ['User.View'] });
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -94,12 +94,38 @@ describe('AuthProvider', () => {
     expect(getAccessToken()).toBe('access-1');
   });
 
+  it('regression: sign-in succeeds for a role without Role.View — permissions come from /auth/me, not a per-role /roles/{id}/permissions fan-out', async () => {
+    // Previously, resolving the signed-in user's own effective permissions
+    // fanned out to `GET /roles/{id}/permissions`, which requires
+    // `Role.View` on the backend. Any user whose role lacked `Role.View`
+    // (i.e. most non-admin roles) got a 403 during login itself and could
+    // never sign in. `/auth/me` now returns `permissions` directly and is
+    // gated only by being authenticated — asserting no `/roles/` call is
+    // made here is exactly what would have caught that bug.
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
+      if (url.endsWith('/auth/me')) return jsonResponse({ ...ME, permissions: ['User.View'] });
+      throw new Error(`unexpected fetch: ${url}`);
+    });
+
+    const getAuth = renderAuth();
+    await waitFor(() => expect(getAuth().status).toBe('anonymous'));
+
+    await act(async () => {
+      await getAuth().signIn({ email: 'agent@example.com', password: 'Passw0rd!' });
+    });
+
+    await waitFor(() => expect(getAuth().status).toBe('authenticated'));
+    expect(getAuth().permissions).toEqual(['User.View']);
+    expect(vi.mocked(fetch).mock.calls.some(([input]) => String(input).includes('/roles/'))).toBe(false);
+  });
+
   it('signOut posts to /auth/logout, clears the token store, and resolves status to anonymous', async () => {
     vi.mocked(fetch).mockImplementation(async (input) => {
       const url = String(input);
       if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) return jsonResponse(ME);
-      if (url.includes('/roles/')) return jsonResponse([]);
       if (url.endsWith('/auth/logout')) return new Response(null, { status: 204 });
       throw new Error(`unexpected fetch: ${url}`);
     });
@@ -131,7 +157,6 @@ describe('AuthProvider', () => {
         return jsonResponse(TOKENS);
       }
       if (url.endsWith('/auth/me')) return jsonResponse(ME);
-      if (url.includes('/roles/')) return jsonResponse([]);
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -150,7 +175,6 @@ describe('AuthProvider', () => {
       const url = String(input);
       if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) return jsonResponse(ME);
-      if (url.includes('/roles/')) return jsonResponse([]);
       if (url.endsWith('/auth/refresh')) {
         return jsonResponse({ code: 'invalid_refresh_token', message: 'nope' }, 401);
       }
@@ -180,7 +204,6 @@ describe('AuthProvider', () => {
       const url = String(input);
       if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) return jsonResponse(ME);
-      if (url.includes('/roles/')) return jsonResponse([]);
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -229,7 +252,6 @@ describe('AuthProvider', () => {
         return jsonResponse(TOKENS);
       }
       if (url.endsWith('/auth/me')) return jsonResponse(ME);
-      if (url.includes('/roles/')) return jsonResponse([]);
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -269,10 +291,11 @@ describe('AuthProvider', () => {
       if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) {
         meCalls += 1;
-        return jsonResponse(meCalls === 1 ? ME : { ...ME, roles: [{ id: 'role-2', name: 'admin', description: null }] });
-      }
-      if (url.includes('/roles/')) {
-        return jsonResponse(meCalls === 1 ? [] : [{ id: 'perm-1', code: 'User.View', description: null }]);
+        return jsonResponse(
+          meCalls === 1
+            ? ME
+            : { ...ME, roles: [{ id: 'role-2', name: 'admin', description: null }], permissions: ['User.View'] },
+        );
       }
       throw new Error(`unexpected fetch: ${url}`);
     });
@@ -298,7 +321,6 @@ describe('AuthProvider', () => {
       const url = String(input);
       if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) return jsonResponse(ME);
-      if (url.includes('/roles/')) return jsonResponse([]);
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -317,7 +339,6 @@ describe('AuthProvider', () => {
       const url = String(input);
       if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) return jsonResponse(ME);
-      if (url.includes('/roles/')) return jsonResponse([]);
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -337,7 +358,6 @@ describe('AuthProvider', () => {
       const url = String(input);
       if (url.endsWith('/auth/refresh')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) return jsonResponse(ME);
-      if (url.includes('/roles/')) return jsonResponse([]);
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -350,7 +370,6 @@ describe('AuthProvider', () => {
       const url = String(input);
       if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) return jsonResponse(ME);
-      if (url.includes('/roles/')) return jsonResponse([]);
       if (url.endsWith('/auth/logout')) return new Response(null, { status: 204 });
       throw new Error(`unexpected fetch: ${url}`);
     });
@@ -389,7 +408,6 @@ describe('AuthProvider', () => {
       const url = String(input);
       if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) return jsonResponse(ME);
-      if (url.includes('/roles/')) return jsonResponse([]);
       throw new Error(`unexpected fetch: ${url}`);
     });
 

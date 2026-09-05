@@ -24,6 +24,7 @@ const ME = {
   is_active: true,
   is_customer: false,
   roles: [{ id: 'role-1', name: 'agent', description: null }],
+  permissions: [] as string[],
 };
 
 function mountTab() {
@@ -58,7 +59,6 @@ describe('multi-tab sign-out (AC16)', () => {
       const url = String(input);
       if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) return jsonResponse(ME);
-      if (url.includes('/roles/')) return jsonResponse([]);
       if (url.endsWith('/auth/logout')) return new Response(null, { status: 204 });
       throw new Error(`unexpected fetch: ${url}`);
     });

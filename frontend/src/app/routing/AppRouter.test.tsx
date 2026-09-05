@@ -17,7 +17,7 @@ const TOKENS = {
   refresh_expires_in: 1_209_600,
 };
 
-function meFor(roleName: string) {
+function meFor(roleName: string, permissions: string[]) {
   return {
     id: 'user-1',
     email: 'user@example.com',
@@ -25,6 +25,7 @@ function meFor(roleName: string) {
     is_active: true,
     is_customer: false,
     roles: [{ id: 'role-1', name: roleName, description: null }],
+    permissions,
   };
 }
 
@@ -33,11 +34,8 @@ function mockAuthenticatedAs(roleName: string, permissions: string[] = []) {
   vi.mocked(fetch).mockImplementation(async (input) => {
     const url = String(input);
     if (url.endsWith('/auth/refresh')) return jsonResponse(TOKENS);
-    if (url.endsWith('/auth/me')) return jsonResponse(meFor(roleName));
+    if (url.endsWith('/auth/me')) return jsonResponse(meFor(roleName, permissions));
     if (url.includes('/identity/users')) return jsonResponse([]);
-    if (url.includes('/roles/')) {
-      return jsonResponse(permissions.map((code) => ({ id: code, code, description: null })));
-    }
     throw new Error(`unexpected fetch: ${url}`);
   });
 }
@@ -75,7 +73,9 @@ describe('AppRouter', () => {
       </AppProviders>,
     );
 
-    expect(await screen.findByRole('heading', { name: 'Access denied' })).toBeInTheDocument();
+    // AccessDenied (Story 15) renders its title as plain text, mirroring the
+    // shared page-state panels rather than a semantic heading.
+    expect(await screen.findByText("You don't have access to this")).toBeInTheDocument();
   });
 
   it('redirects /admin to /admin/users and renders it when the admin has User.View', async () => {
@@ -101,7 +101,7 @@ describe('AppRouter', () => {
       </AppProviders>,
     );
 
-    expect(await screen.findByRole('heading', { name: 'Access denied' })).toBeInTheDocument();
+    expect(await screen.findByText("You don't have access to this")).toBeInTheDocument();
   });
 
   it('renders the register page and is reachable while unauthenticated', async () => {
@@ -138,7 +138,7 @@ describe('AppRouter', () => {
 
     expect(screen.getByTestId('app-splash')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Sign in' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Access denied' })).not.toBeInTheDocument();
+    expect(screen.queryByText("You don't have access to this")).not.toBeInTheDocument();
 
     // AC1: once bootstrap resolves (here, the stored token turns out to be
     // invalid), the splash is replaced by the redirect — never both at once.

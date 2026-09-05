@@ -16,6 +16,16 @@ class UserResponse(BaseModel):
     roles: list[RoleSummaryResponse]
 
 
+class MeResponse(UserResponse):
+    """`/auth/me` only: the caller's own effective permissions, resolved live
+    from their current role/permission relationships. Not part of the plain
+    `UserResponse` returned for *other* users (e.g. the users list/detail
+    endpoints) — a viewer with `User.View` must not be able to read another
+    user's permission set just by looking up their record."""
+
+    permissions: list[str]
+
+
 class CreateUserRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)

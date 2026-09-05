@@ -10,9 +10,48 @@ export interface ListRolesParams {
   offset: number;
 }
 
-export function listRoles(client: HttpClient, params: ListRolesParams): Promise<RoleSummaryResponse[]> {
+export function listRoles(
+  client: HttpClient,
+  params: ListRolesParams,
+  options?: { suppressForbiddenHandling?: boolean },
+): Promise<RoleSummaryResponse[]> {
   const search = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset) });
-  return client.get<RoleSummaryResponse[]>(`${IDENTITY}/roles?${search.toString()}`);
+  return client.get<RoleSummaryResponse[]>(`${IDENTITY}/roles?${search.toString()}`, undefined, options);
+}
+
+export interface ListRolesPagedParams {
+  limit: number;
+  offset: number;
+  q?: string;
+  sort?: string;
+  has_permission_id?: string[];
+}
+
+// See `users/api.ts`'s `PagedResponse<T>` comment — duplicated per-file
+// rather than shared, matching this codebase's existing convention.
+export interface PagedResponse<T> {
+  items: T[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+/** `paged=true` variant of `listRoles`. Only `name` is a valid `sort` column — the backend 400s on anything else. */
+export function listRolesPaged(client: HttpClient, params: ListRolesPagedParams): Promise<PagedResponse<RoleSummaryResponse>> {
+  const search = new URLSearchParams();
+  search.set('limit', String(params.limit));
+  search.set('offset', String(params.offset));
+  search.set('paged', 'true');
+  if (params.q) {
+    search.set('q', params.q);
+  }
+  if (params.sort) {
+    search.set('sort', params.sort);
+  }
+  for (const id of params.has_permission_id ?? []) {
+    search.append('has_permission_id', id);
+  }
+  return client.get<PagedResponse<RoleSummaryResponse>>(`${IDENTITY}/roles?${search.toString()}`);
 }
 
 export function getRole(client: HttpClient, id: string): Promise<RoleSummaryResponse> {

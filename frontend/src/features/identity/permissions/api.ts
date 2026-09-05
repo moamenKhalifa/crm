@@ -13,9 +13,44 @@ export interface ListPermissionsParams {
 export function listPermissions(
   client: HttpClient,
   params: ListPermissionsParams,
+  options?: { suppressForbiddenHandling?: boolean },
 ): Promise<PermissionSummaryResponse[]> {
   const search = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset) });
-  return client.get<PermissionSummaryResponse[]>(`${IDENTITY}/permissions?${search.toString()}`);
+  return client.get<PermissionSummaryResponse[]>(`${IDENTITY}/permissions?${search.toString()}`, undefined, options);
+}
+
+export interface ListPermissionsPagedParams {
+  limit: number;
+  offset: number;
+  q?: string;
+  sort?: string;
+}
+
+// See `users/api.ts`'s `PagedResponse<T>` comment — duplicated per-file
+// rather than shared, matching this codebase's existing convention.
+export interface PagedResponse<T> {
+  items: T[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+/** `paged=true` variant of `listPermissions`. Only `code` is a valid `sort` column — the backend 400s on anything else. */
+export function listPermissionsPaged(
+  client: HttpClient,
+  params: ListPermissionsPagedParams,
+): Promise<PagedResponse<PermissionSummaryResponse>> {
+  const search = new URLSearchParams();
+  search.set('limit', String(params.limit));
+  search.set('offset', String(params.offset));
+  search.set('paged', 'true');
+  if (params.q) {
+    search.set('q', params.q);
+  }
+  if (params.sort) {
+    search.set('sort', params.sort);
+  }
+  return client.get<PagedResponse<PermissionSummaryResponse>>(`${IDENTITY}/permissions?${search.toString()}`);
 }
 
 export function getPermission(client: HttpClient, id: string): Promise<PermissionSummaryResponse> {

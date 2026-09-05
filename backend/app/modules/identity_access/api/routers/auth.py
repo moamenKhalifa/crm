@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.identity_access.application.authorization import resolve_effective_permissions
 from app.modules.identity_access.application.mappers import to_user_summary
 from app.modules.identity_access.application.use_cases.login import Login, LoginCommand
 from app.modules.identity_access.application.use_cases.logout import Logout, LogoutCommand
@@ -30,7 +31,7 @@ from app.shared.config.settings import Settings, get_settings
 from ..dependencies import get_current_user, get_db_session
 from ..mapping import tokens_to_response, user_to_response
 from ..schemas.auth import LoginRequest, RefreshRequest, RegisterCustomerRequest, TokenPairResponse
-from ..schemas.user import UserResponse
+from ..schemas.user import MeResponse, UserResponse
 
 router = APIRouter()
 
@@ -105,10 +106,18 @@ async def logout(
     await use_case.execute(LogoutCommand(refresh_token=body.refresh_token))
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me", response_model=MeResponse)
 async def me(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db_session),
-) -> UserResponse:
-    summary = await to_user_summary(user, build_role_repo(session))
-    return user_to_response(summary)
+) -> MeResponse:
+    role_repo = build_role_repo(session)
+    summary = await to_user_summary(user, role_repo)
+    # Live-resolved, not decoded from the caller's (possibly stale) JWT — and
+    # gated only by `get_current_user` (any authenticated user may read their
+    # own effective permissions), unlike `GET /roles/{id}/permissions` which
+    # requires `Role.View`. This is what the frontend's auth bootstrap uses
+    # to populate `hasPermission()` checks, so it must not require a
+    # permission most non-admin roles won't have.
+    permissions = await resolve_effective_permissions(user, role_repo, build_permission_repo(session))
+    return MeResponse(**user_to_response(summary).model_dump(), permissions=sorted(permissions))

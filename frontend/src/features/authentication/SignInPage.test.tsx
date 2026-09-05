@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ConfigProvider } from '@app/configuration/ConfigProvider';
 import { LocaleProvider } from '@shared/i18n';
+import { ThemeProvider } from '@shared/theme';
 
 import { AuthProvider } from './AuthProvider';
 import SignInPage from './SignInPage';
@@ -28,6 +29,7 @@ function meFor(roleName: string | null) {
     is_active: true,
     is_customer: false,
     roles: roleName ? [{ id: 'role-1', name: roleName, description: null }] : [],
+    permissions: [] as string[],
   };
 }
 
@@ -35,17 +37,19 @@ function renderSignIn(initialEntries: Array<string | { pathname: string; state?:
   return render(
     <ConfigProvider>
       <LocaleProvider>
-        <AuthProvider>
-          <MemoryRouter initialEntries={initialEntries}>
-            <Routes>
-              <Route path="/login" element={<SignInPage />} />
-              <Route path="/agent" element={<h1>Agent Landing</h1>} />
-              <Route path="/admin" element={<h1>Admin Landing</h1>} />
-              <Route path="/portal" element={<h1>Portal Landing</h1>} />
-              <Route path="/custom" element={<h1>Custom Target</h1>} />
-            </Routes>
-          </MemoryRouter>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <MemoryRouter initialEntries={initialEntries}>
+              <Routes>
+                <Route path="/login" element={<SignInPage />} />
+                <Route path="/agent" element={<h1>Agent Landing</h1>} />
+                <Route path="/admin" element={<h1>Admin Landing</h1>} />
+                <Route path="/portal" element={<h1>Portal Landing</h1>} />
+                <Route path="/custom" element={<h1>Custom Target</h1>} />
+              </Routes>
+            </MemoryRouter>
+          </AuthProvider>
+        </ThemeProvider>
       </LocaleProvider>
     </ConfigProvider>,
   );
@@ -67,6 +71,13 @@ describe('SignInPage', () => {
     expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
     expect(screen.getByLabelText(/Email/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Password/)).toBeInTheDocument();
+  });
+
+  it('renders the LanguageSwitcher above the card, in a banner landmark (AC8)', () => {
+    renderSignIn();
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'English' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'العربية' })).toBeInTheDocument();
   });
 
   it('validates on blur then live thereafter, and never shows an untouched field error (AC1, G2)', async () => {
@@ -101,7 +112,6 @@ describe('SignInPage', () => {
       const url = String(input);
       if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) return jsonResponse(meFor('agent'));
-      if (url.includes('/roles/')) return jsonResponse([]);
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -118,7 +128,6 @@ describe('SignInPage', () => {
       const url = String(input);
       if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) return jsonResponse(meFor('agent'));
-      if (url.includes('/roles/')) return jsonResponse([]);
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -135,7 +144,6 @@ describe('SignInPage', () => {
       const url = String(input);
       if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) return jsonResponse(meFor('admin'));
-      if (url.includes('/roles/')) return jsonResponse([]);
       throw new Error(`unexpected fetch: ${url}`);
     });
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -156,7 +164,6 @@ describe('SignInPage', () => {
       const url = String(input);
       if (url.endsWith('/auth/refresh')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) return jsonResponse(meFor('agent'));
-      if (url.includes('/roles/')) return jsonResponse([]);
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -170,7 +177,6 @@ describe('SignInPage', () => {
       const url = String(input);
       if (url.endsWith('/auth/login')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) return jsonResponse(meFor('agent'));
-      if (url.includes('/roles/')) return jsonResponse([]);
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -292,7 +298,7 @@ describe('SignInPage', () => {
   it('switching locale to ar sets <html dir="rtl"> while the email input stays dir="ltr" (AC18, G8)', async () => {
     renderSignIn();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Arabic' }));
+    fireEvent.click(screen.getByRole('button', { name: 'العربية' }));
 
     await waitFor(() => expect(document.documentElement.dir).toBe('rtl'));
     expect(screen.getByLabelText(/Email|البريد/)).toHaveAttribute('dir', 'ltr');

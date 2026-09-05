@@ -36,6 +36,14 @@ export interface PermissionSummaryResponse {
   description: string | null;
 }
 
+/** `/auth/me` only — the caller's own effective permissions, live-resolved
+ * server-side. Gated only by being authenticated (unlike, say,
+ * `GET /roles/{id}/permissions`, which requires `Role.View`), since a user
+ * is always entitled to know their own permission set. */
+export interface MeResponse extends UserResponse {
+  permissions: string[];
+}
+
 export function login(client: HttpClient, body: { email: string; password: string }): Promise<TokenPairResponse> {
   return client.post<TokenPairResponse>(`${IDENTITY}/auth/login`, body);
 }
@@ -63,23 +71,6 @@ export function logout(client: HttpClient, refreshToken: string): Promise<void> 
   return client.post<void>(`${IDENTITY}/auth/logout`, { refresh_token: refreshToken });
 }
 
-export function fetchMe(client: HttpClient): Promise<UserResponse> {
-  return client.get<UserResponse>(`${IDENTITY}/auth/me`);
-}
-
-// TODO(backend): `UserResponse` does not yet expose a flat `permissions[]`
-// array (backend/app/modules/identity_access/api/schemas/user.py). Until a
-// follow-up backend story adds it to `/auth/me`, derive the effective
-// permission set client-side by fanning out per role.
-export async function fetchPermissionsForRoles(client: HttpClient, roleIds: string[]): Promise<string[]> {
-  const results = await Promise.all(
-    roleIds.map((roleId) => client.get<PermissionSummaryResponse[]>(`${IDENTITY}/roles/${roleId}/permissions`)),
-  );
-  const codes = new Set<string>();
-  for (const permissions of results) {
-    for (const permission of permissions) {
-      codes.add(permission.code);
-    }
-  }
-  return Array.from(codes);
+export function fetchMe(client: HttpClient): Promise<MeResponse> {
+  return client.get<MeResponse>(`${IDENTITY}/auth/me`);
 }

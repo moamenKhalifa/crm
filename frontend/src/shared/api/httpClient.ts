@@ -25,6 +25,14 @@ export interface RequestOptions {
   headers?: Record<string, string>;
   /** @internal set on the single retry after a refresh, to prevent looping. */
   _isRetry?: boolean;
+  /**
+   * Skip the global `onForbidden` toast/reauth-check for this call's 403s.
+   * For auxiliary "fetch a picker's option list" lookups that a caller
+   * already renders without (e.g. a filter dropdown backed by a sibling
+   * resource's `.View` permission) — the caller degrades locally instead
+   * of surfacing a scary global "Forbidden" toast for an optional lookup.
+   */
+  suppressForbiddenHandling?: boolean;
 }
 
 interface NormalizedError {
@@ -105,7 +113,7 @@ export class HttpClient {
   }
 
   async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const { method = 'GET', body, headers = {}, _isRetry = false } = options;
+    const { method = 'GET', body, headers = {}, _isRetry = false, suppressForbiddenHandling = false } = options;
     const absolute = isAbsoluteUrl(path);
     const url = absolute ? path : `${this.baseUrl}${path}`;
 
@@ -154,7 +162,7 @@ export class HttpClient {
       }
     }
 
-    if (response.status === 403) {
+    if (response.status === 403 && !suppressForbiddenHandling) {
       this.onForbidden?.();
     }
 
@@ -184,8 +192,8 @@ export class HttpClient {
     return this.refreshPromise;
   }
 
-  get<T>(path: string, headers?: Record<string, string>): Promise<T> {
-    return this.request<T>(path, { method: 'GET', headers });
+  get<T>(path: string, headers?: Record<string, string>, options?: { suppressForbiddenHandling?: boolean }): Promise<T> {
+    return this.request<T>(path, { method: 'GET', headers, suppressForbiddenHandling: options?.suppressForbiddenHandling });
   }
 
   post<T>(path: string, body?: unknown, headers?: Record<string, string>): Promise<T> {

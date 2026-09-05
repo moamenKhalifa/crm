@@ -103,6 +103,55 @@ async def test_reused_refresh_returns_401_revoked(client):
     assert replay.json()["error"]["code"] == "revoked_refresh_token"
 
 
+async def test_me_returns_effective_permissions_for_admin(admin_client):
+    response = await admin_client.get("/identity/auth/me")
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert "User.View" in body["permissions"]
+    assert "Role.View" in body["permissions"]
+
+
+async def test_me_returns_empty_permissions_for_a_roleless_customer(customer_client):
+    response = await customer_client.get("/identity/auth/me")
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["roles"] == []
+    assert body["permissions"] == []
+
+
+async def test_me_does_not_require_role_view(admin_client):
+    """Regression: `/auth/me` is what the frontend's auth bootstrap calls to
+    resolve `hasPermission()` for the whole app. It must work for *any*
+    authenticated user regardless of which permissions they hold — a user
+    whose role has `User.View` but not `Role.View` must still be able to log
+    in and use the app, not be blocked by `insufficient_permissions` just for
+    resolving their own permission set."""
+    permissions = await admin_client.get("/identity/permissions?limit=100")
+    user_view_id = next(p["id"] for p in permissions.json() if p["code"] == "User.View")
+
+    role = await admin_client.post("/identity/roles", json={"name": "viewer-only"})
+    role_id = role.json()["id"]
+    await admin_client.put(f"/identity/roles/{role_id}/permissions", json={"permission_ids": [user_view_id]})
+
+    created = await admin_client.post(
+        "/identity/users", json={"email": "viewer-only@example.com", "password": "Passw0rd!", "full_name": "V"}
+    )
+    user_id = created.json()["id"]
+    await admin_client.put(f"/identity/users/{user_id}/roles", json={"role_ids": [role_id]})
+
+    login = await admin_client.post(
+        "/identity/auth/login", json={"email": "viewer-only@example.com", "password": "Passw0rd!"}
+    )
+    token = login.json()["access_token"]
+
+    response = await admin_client.get("/identity/auth/me", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200, response.text
+    assert response.json()["permissions"] == ["User.View"]
+
+
 async def test_logout_returns_204_and_subsequent_refresh_returns_401(client):
     payload = {"email": "logout@example.com", "password": "Passw0rd!", "full_name": "X"}
     await client.post("/identity/auth/register", json=payload)

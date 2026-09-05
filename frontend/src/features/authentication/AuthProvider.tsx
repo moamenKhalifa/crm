@@ -14,8 +14,8 @@ import { useAppStore } from '@app/store/appStore';
 import { HttpClient, isApiError, setAccessToken } from '@shared/api';
 import { bumpCacheGeneration } from '@shared/hooks';
 
-import { fetchMe, fetchPermissionsForRoles, login, logout, refresh as refreshRequest } from './api';
-import type { TokenPairResponse, UserResponse } from './api';
+import { fetchMe, login, logout, refresh as refreshRequest } from './api';
+import type { MeResponse, TokenPairResponse } from './api';
 import { refreshBridge } from './refreshBridge';
 
 export type AuthStatus = 'unknown' | 'authenticated' | 'anonymous';
@@ -51,7 +51,7 @@ export interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-function toAuthUser(me: UserResponse): AuthUser {
+function toAuthUser(me: MeResponse): AuthUser {
   return {
     id: me.id,
     fullName: me.full_name,
@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const client = useMemo(() => new HttpClient({ baseUrl: config.apiBaseUrl }), [config.apiBaseUrl]);
 
   const applySession = useCallback(
-    (tokens: TokenPairResponse, me: UserResponse, nextPermissions: string[]) => {
+    (tokens: TokenPairResponse, me: MeResponse, nextPermissions: string[]) => {
       setAccessToken(tokens.access_token);
       refreshTokenRef.current = tokens.refresh_token;
 
@@ -152,9 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // calls go out, since `HttpClient` attaches it automatically now.
       setAccessToken(tokens.access_token);
       const me = await fetchMe(client);
-      const roleIds = me.roles.map((role) => role.id);
-      const fetchedPermissions = await fetchPermissionsForRoles(client, roleIds);
-      applySession(tokens, me, fetchedPermissions);
+      applySession(tokens, me, me.permissions);
     },
     [client, applySession],
   );
@@ -277,8 +275,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     const me = await fetchMe(client);
-    const roleIds = me.roles.map((role) => role.id);
-    const nextPermissions = await fetchPermissionsForRoles(client, roleIds);
+    const nextPermissions = me.permissions;
     const nextUser = toAuthUser(me);
     const nextRoles = me.roles.map((role) => role.name);
     setUser(nextUser);

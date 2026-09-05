@@ -81,10 +81,7 @@ describe('PermissionDetailsPage', () => {
       if (url.endsWith('/auth/refresh')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) {
         meCalls += 1;
-        return jsonResponse(ME);
-      }
-      if (url.includes('/roles/') && url.includes('/permissions')) {
-        return jsonResponse([{ id: 'p1', code: 'User.View', description: null }]);
+        return jsonResponse({ ...ME, permissions: ['User.View'] });
       }
       if (init?.method === 'DELETE') return new Response(null, { status: 204 });
       if (url.endsWith('/identity/permissions/p1')) return jsonResponse(PERMISSION);
