@@ -12,6 +12,8 @@ Entry point for the **some-enhancment** feature. Stories execute in order by the
 | 11 | `11-story-11.md` | Enhance Button component and action hierarchy patterns | 11 | — |
 | 12 | `12-story-12.md` | Enhance Form controls and form layout | 12 | — |
 | 13 | `13-story-13.md` | Reusable data table | 13 | — |
+| 14 | `14-story-14.md` | Enhance Application shell, navigation and language switcher | 14 | — |
+| 15 | `15-story-15.md` | Enhance Feedback, status and page-state components | 15 | — |
 
 ## Dependency notes
 

@@ -17,11 +17,11 @@ planner:
   provider: anthropic
   mode: auto
   budget:
-    maxFileReads: 100
-    maxContextBytes: 5000000
-    maxDurationSeconds: 720
+    maxFileReads: 200
+    maxContextBytes: 7000000
+    maxDurationSeconds: 920
   cache:
     enabled: true
-  maxOutputTokens: 46384
+  maxOutputTokens: 46884
   auth:
     anthropic: subscription
