@@ -26,3 +26,10 @@
   color: var(--color-text-muted);
   margin: 0;
 }
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-xs);
+}

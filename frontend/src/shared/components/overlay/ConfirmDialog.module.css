@@ -15,3 +15,9 @@
 [dir='rtl'] .actions {
   flex-direction: row-reverse;
 }
+
+.consequence {
+  font-size: var(--text-sm);
+  color: var(--color-text-default);
+  margin-block-end: var(--space-sm);
+}

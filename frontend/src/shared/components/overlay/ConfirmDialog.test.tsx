@@ -67,4 +67,73 @@ describe('ConfirmDialog', () => {
   it('CSS source flips the actions row under RTL without a component-level branch', () => {
     expect(confirmDialogCss).toMatch(/\[dir=['"]rtl['"]\]\s*\.actions\s*\{[^}]*flex-direction:\s*row-reverse/);
   });
+
+  it('destructive forces the Confirm button to variant="danger", regardless of `variant` (AC5)', () => {
+    render(<ConfirmDialog open onClose={() => {}} onConfirm={() => {}} title="Delete?" variant="primary" destructive />);
+    expect(screen.getByRole('button', { name: 'Confirm' })).toHaveAttribute('data-variant', 'danger');
+  });
+
+  it('renders the consequence in the dialog body (AC5)', () => {
+    render(
+      <ConfirmDialog
+        open
+        onClose={() => {}}
+        onConfirm={() => {}}
+        title="Delete user?"
+        consequence={<p>Delete Alice (owner of 3 tickets)</p>}
+      />,
+    );
+    expect(screen.getByText('Delete Alice (owner of 3 tickets)')).toBeInTheDocument();
+  });
+
+  it('disables Confirm until the typed phrase exactly matches confirmationPhrase (AC5)', () => {
+    render(
+      <ConfirmDialog
+        open
+        onClose={() => {}}
+        onConfirm={() => {}}
+        title="Delete?"
+        destructive
+        confirmationPhrase="alice@example.com"
+      />,
+    );
+    const confirmButton = screen.getByRole('button', { name: 'Confirm' });
+    expect(confirmButton).toBeDisabled();
+
+    const input = screen.getByLabelText('Type “alice@example.com” to confirm');
+    fireEvent.change(input, { target: { value: 'alice@example.com' } });
+    expect(confirmButton).not.toBeDisabled();
+  });
+
+  it('typed confirmation is case-sensitive and is never lower-cased for the comparison', () => {
+    render(<ConfirmDialog open onClose={() => {}} onConfirm={() => {}} title="Delete?" confirmationPhrase="Alice" />);
+    const confirmButton = screen.getByRole('button', { name: 'Confirm' });
+    const input = screen.getByLabelText('Type “Alice” to confirm');
+
+    fireEvent.change(input, { target: { value: 'alice' } });
+    expect(confirmButton).toBeDisabled();
+
+    fireEvent.change(input, { target: { value: 'Alice' } });
+    expect(confirmButton).not.toBeDisabled();
+  });
+
+  it('trims surrounding whitespace when comparing the typed phrase', () => {
+    render(<ConfirmDialog open onClose={() => {}} onConfirm={() => {}} title="Delete?" confirmationPhrase="Alice" />);
+    const input = screen.getByLabelText('Type “Alice” to confirm');
+    fireEvent.change(input, { target: { value: '  Alice  ' } });
+    expect(screen.getByRole('button', { name: 'Confirm' })).not.toBeDisabled();
+  });
+
+  it('onConfirm only fires once Confirm is enabled (typed confirmation gate)', () => {
+    const onConfirm = vi.fn();
+    render(
+      <ConfirmDialog open onClose={() => {}} onConfirm={onConfirm} title="Delete?" confirmationPhrase="Alice" />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    expect(onConfirm).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText('Type “Alice” to confirm'), { target: { value: 'Alice' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
 });

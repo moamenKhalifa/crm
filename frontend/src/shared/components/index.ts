@@ -46,6 +46,18 @@ export type { BadgeProps, BadgeVariant } from './data/Badge';
 export { Status } from './data/Status';
 export type { StatusProps } from './data/Status';
 
+export { DataTable } from './data/DataTable';
+export { useDataTableState } from './data/DataTable';
+export type {
+  DataTableProps,
+  DataTableColumn,
+  DataTableState,
+  DataTableFilterDef,
+  DataTableFilterOption,
+  DataTableRowAction,
+  SortDir,
+} from './data/DataTable';
+
 export { Alert } from './feedback/Alert';
 export type { AlertProps, AlertVariant } from './feedback/Alert';
 export { Toast } from './feedback/Toast';
@@ -62,6 +74,16 @@ export { SuccessState } from './feedback/SuccessState';
 export type { SuccessStateProps } from './feedback/SuccessState';
 export { AsyncBoundary } from './feedback/AsyncBoundary';
 export type { AsyncBoundaryProps } from './feedback/AsyncBoundary';
+export { FilteredEmpty } from './feedback/FilteredEmpty';
+export type { FilteredEmptyProps } from './feedback/FilteredEmpty';
+export { AccessDenied } from './feedback/AccessDenied';
+export type { AccessDeniedProps } from './feedback/AccessDenied';
+export { NotFound } from './feedback/NotFound';
+export type { NotFoundProps } from './feedback/NotFound';
+export { Skeleton } from './feedback/Skeleton';
+export type { SkeletonProps } from './feedback/Skeleton';
+export { LoadingBoundary, useMinDurationLoading } from './feedback/LoadingBoundary';
+export type { LoadingBoundaryProps } from './feedback/LoadingBoundary';
 
 export { Modal } from './overlay/Modal';
 export type { ModalProps } from './overlay/Modal';
@@ -78,7 +100,9 @@ export type { UserMenuProps } from './layout/UserMenu';
 export { AppHeader } from './navigation/AppHeader';
 export type { AppHeaderProps } from './navigation/AppHeader';
 export { AppSidebar } from './navigation/AppSidebar';
-export type { AppSidebarProps, AppSidebarItem } from './navigation/AppSidebar';
+export type { AppSidebarProps, AppSidebarItem, AppSidebarGroup } from './navigation/AppSidebar';
+export { LanguageSwitcher } from './navigation/LanguageSwitcher';
+export type { LanguageSwitcherProps } from './navigation/LanguageSwitcher';
 export { Menu } from './navigation/Menu';
 export type { MenuProps, MenuItem } from './navigation/Menu';
 export { Breadcrumb } from './navigation/Breadcrumb';

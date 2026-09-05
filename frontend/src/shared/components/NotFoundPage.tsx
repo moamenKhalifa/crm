@@ -1,12 +1,5 @@
-import { useT } from '@shared/i18n';
+import { NotFound } from './feedback/NotFound';
 
 export default function NotFoundPage() {
-  const { t } = useT();
-
-  return (
-    <main>
-      <h1>404</h1>
-      <p>{t('errors.notFound')}</p>
-    </main>
-  );
+  return <NotFound />;
 }

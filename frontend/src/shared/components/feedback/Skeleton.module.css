@@ -1,0 +1,25 @@
+.skeleton {
+  inline-size: 100%;
+  block-size: 1em;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--color-surface-sunken) 25%, var(--color-border-subtle) 50%, var(--color-surface-sunken) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background: var(--color-surface-muted);
+  }
+}

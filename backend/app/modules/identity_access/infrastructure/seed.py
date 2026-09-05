@@ -40,6 +40,7 @@ DEFAULT_PERMISSION_CODES = [
     "Permission.Delete",
 ]
 
+# Role names are stored lower-case; UI does not text-transform.
 ADMIN_ROLE_NAME = "admin"
 
 

@@ -22,6 +22,7 @@ from app.modules.identity_access.domain.errors import (
     PermissionNotFoundError,
     RoleNotFoundError,
 )
+from app.modules.identity_access.domain.ports.repositories import ListQuery
 
 from ..fakes import FakePermissionRepository, FakeRoleRepository
 
@@ -39,11 +40,31 @@ async def test_create_role_duplicate_name_rejected():
         await CreateRole(role_repo).execute(CreateRoleCommand(name="agent"))
 
 
+async def test_create_role_normalises_case():
+    role_repo = FakeRoleRepository()
+    created = await CreateRole(role_repo).execute(CreateRoleCommand(name="Manager"))
+    assert created.name == "manager"
+
+    with pytest.raises(DuplicateRoleError):
+        await CreateRole(role_repo).execute(CreateRoleCommand(name="manager"))
+
+
 async def test_list_roles_returns_created():
     role_repo = FakeRoleRepository()
     await CreateRole(role_repo).execute(CreateRoleCommand(name="agent"))
     results = await ListRoles(role_repo).execute()
     assert len(results) == 1
+
+
+async def test_list_roles_execute_paged_returns_total():
+    role_repo = FakeRoleRepository()
+    for name in ("agent", "billing", "support"):
+        await CreateRole(role_repo).execute(CreateRoleCommand(name=name))
+
+    result = await ListRoles(role_repo).execute_paged(ListQuery(limit=2, offset=0))
+
+    assert result.total == 3
+    assert len(result.items) == 2
 
 
 async def test_get_role_not_found_raises():
@@ -64,6 +85,15 @@ async def test_update_role_duplicate_name_rejected():
     other = await CreateRole(role_repo).execute(CreateRoleCommand(name="admin"))
     with pytest.raises(DuplicateRoleError):
         await UpdateRole(role_repo).execute(UpdateRoleCommand(role_id=other.id, name="agent"))
+
+
+async def test_update_role_normalises_case():
+    role_repo = FakeRoleRepository()
+    await CreateRole(role_repo).execute(CreateRoleCommand(name="manager"))
+    other = await CreateRole(role_repo).execute(CreateRoleCommand(name="agent"))
+
+    with pytest.raises(DuplicateRoleError):
+        await UpdateRole(role_repo).execute(UpdateRoleCommand(role_id=other.id, name="Manager"))
 
 
 async def test_delete_role_removes_it():

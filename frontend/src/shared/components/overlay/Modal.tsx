@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 
 import styles from './Modal.module.css';
 
@@ -21,11 +21,17 @@ const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:
  */
 export function Modal({ open, onClose, title, size = 'md', footer, children }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  // Captured on open, restored on close (AC6) — a plain ref, not state, since
+  // writing it must never itself trigger a render.
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) {
       return;
     }
+
+    previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -52,7 +58,18 @@ export function Modal({ open, onClose, title, size = 'md', footer, children }: M
     document.addEventListener('keydown', handleKeyDown);
     dialogRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)?.focus();
 
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      // The trigger may have been unmounted while the dialog was open (e.g.
+      // a row action button in a virtualised table) — fall back to the body
+      // rather than focusing a detached node.
+      const previous = previouslyFocusedRef.current;
+      if (previous && previous.isConnected) {
+        previous.focus();
+      } else {
+        document.body.focus();
+      }
+    };
   }, [open, onClose]);
 
   if (!open) {
@@ -65,14 +82,16 @@ export function Modal({ open, onClose, title, size = 'md', footer, children }: M
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-labelledby={title ? titleId : undefined}
         className={styles.dialog}
         data-size={size}
         onMouseDown={(event) => event.stopPropagation()}
       >
         {title && (
           <div className={styles.header}>
-            <h2 className={styles.title}>{title}</h2>
+            <h2 id={titleId} className={styles.title}>
+              {title}
+            </h2>
             <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
               ×
             </button>

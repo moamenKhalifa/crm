@@ -11,11 +11,6 @@
     "showPassword": "Show password",
     "hidePassword": "Hide password",
     "brandHeading": "Customer Support CRM",
-    "localeSwitcher": {
-      "label": "Language",
-      "en": "English",
-      "ar": "Arabic"
-    },
     "links": {
       "forgotPassword": "Forgot your password?",
       "createAccount": "Create an account"
@@ -79,7 +74,39 @@
   "states": {
     "loading": "Loading…",
     "empty": "Nothing to show yet.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "errorReference": "Reference: {{id}}",
+    "noReference": "(no reference)",
+    "filteredEmpty": {
+      "title": "No results match your filters",
+      "description": "Try clearing one or more filters.",
+      "clear": "Clear filters"
+    },
+    "notFound": {
+      "title": "We can't find that page",
+      "description": "The link may be broken or the page may have moved.",
+      "back": "Back to home"
+    },
+    "accessDenied": {
+      "title": "You don't have access to this",
+      "description": "Ask an admin for the required permission.",
+      "back": "Back to home"
+    }
+  },
+  "toast": {
+    "dismiss": "Dismiss"
+  },
+  "alert": {
+    "retry": "Retry",
+    "correlationId": "Reference: {{id}}"
+  },
+  "dialog": {
+    "typeToConfirm": "Type “{{phrase}}” to confirm"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending"
   },
   "validation": {
     "required": "This field is required.",
@@ -90,10 +117,37 @@
   },
   "nav": {
     "header": {
-      "menu": "Menu"
+      "home": "Home",
+      "menu": "Open navigation"
     },
     "sidebar": {
-      "collapse": "Collapse sidebar"
+      "label": "Primary",
+      "collapse": "Collapse sidebar",
+      "drawerTitle": "Navigation",
+      "groups": {
+        "administration": "Administration"
+      }
+    },
+    "skipToContent": "Skip to content",
+    "footer": {
+      "copy": "© {{year}} Customer Support CRM"
+    },
+    "langSwitcher": {
+      "label": "Language",
+      "announce": "Interface language changed to {{language}}"
+    },
+    "accountMenu": {
+      "label": "Account menu for {{name}}",
+      "language": "Language"
+    },
+    "roleLabel": {
+      "admin": "Administrator",
+      "agent": "Agent",
+      "customer": "Customer"
+    },
+    "areas": {
+      "agent": "Agent",
+      "portal": "Portal"
     }
   },
   "admin": {
@@ -124,6 +178,16 @@
         "active": "Active",
         "roles": "Roles",
         "actions": "Actions"
+      },
+      "filters": {
+        "status": "Status",
+        "role": "Role"
+      },
+      "empty": {
+        "title": "No users yet"
+      },
+      "emptyFiltered": {
+        "title": "No users match these filters"
       },
       "status": {
         "active": "Active",
@@ -177,6 +241,15 @@
         "description": "Description",
         "actions": "Actions"
       },
+      "filters": {
+        "permission": "Permission"
+      },
+      "empty": {
+        "title": "No roles yet"
+      },
+      "emptyFiltered": {
+        "title": "No roles match these filters"
+      },
       "actions": {
         "view": "View",
         "edit": "Edit",
@@ -221,6 +294,12 @@
         "description": "Description",
         "actions": "Actions"
       },
+      "empty": {
+        "title": "No permissions yet"
+      },
+      "emptyFiltered": {
+        "title": "No permissions match these filters"
+      },
       "actions": {
         "view": "View",
         "edit": "Edit",
@@ -252,10 +331,52 @@
     "confirm": "Confirm",
     "cancel": "Cancel",
     "close": "Close",
+    "dismiss": "Dismiss",
     "moreActions": "More actions",
     "error": {
       "unexpected": "Something went wrong. Please try again. Reference: {{correlationId}}"
     }
+  },
+  "dataTable": {
+    "search": {
+      "placeholder": "Search…",
+      "label": "Search"
+    },
+    "filters": {
+      "clearAll": "Clear all",
+      "all": "All"
+    },
+    "summary": {
+      "showing": "Showing {{from}}–{{to}} of {{total}}"
+    },
+    "pageSize": {
+      "label": "Rows per page"
+    },
+    "pagination": {
+      "label": "Pagination",
+      "previous": "Previous page",
+      "next": "Next page"
+    },
+    "sort": {
+      "ascending": "sorted ascending",
+      "descending": "sorted descending"
+    },
+    "moreActions": "More actions for {{row}}",
+    "columns": {
+      "actions": "Actions"
+    },
+    "empty": {
+      "generic": "Nothing to show yet."
+    },
+    "filteredEmpty": {
+      "generic": "Nothing matches these filters.",
+      "clear": "Clear filters"
+    },
+    "error": {
+      "generic": "Something went wrong while loading this list.",
+      "retry": "Retry"
+    },
+    "loading": "Loading"
   },
   "designSystem": {
     "title": "Design tokens",
@@ -397,6 +518,142 @@
         "combobox": "Combobox (searchable)",
         "multiSelect": "Multi-select",
         "datePicker": "Date picker"
+      }
+    },
+    "dataTable": {
+      "title": "Data table",
+      "guidance": {
+        "title": "When to use / when not to use",
+        "use": "Any admin list view backed by a paginated, filterable, sortable collection — the Identity & Access user/role/permission lists are the canonical example.",
+        "avoid": "A tiny, fixed list with no need for search, sort, or paging — a plain list or the simpler Table primitive is lighter-weight there."
+      },
+      "sections": {
+        "apiReference": "API reference",
+        "states": "States",
+        "rtl": "RTL preview",
+        "overflow": "Row actions overflow",
+        "mobile": "Mobile card layout"
+      },
+      "apiReference": {
+        "columns": {
+          "prop": "Prop",
+          "description": "Description"
+        },
+        "rows": {
+          "columns": "The column definitions — label, render function, sortability, alignment, responsive hiding.",
+          "rows": "The current page of data to render.",
+          "rowKey": "Derives a stable React key / identity string for a row.",
+          "totalCount": "Total row count across all pages — drives the footer summary and pager.",
+          "state": "The current page, page size, sort, search query and filters — usually from useDataTableState().",
+          "onStateChange": "Called with the next full state whenever the user sorts, searches, filters, or pages.",
+          "isLoading": "True while the very first page is loading — renders skeleton rows.",
+          "isRefetching": "True while a later page is loading with existing rows still shown — dims the body.",
+          "isError": "True when the last fetch failed — renders a retry row instead of data.",
+          "errorMessage": "User-facing error text shown alongside the retry action.",
+          "onRetry": "Called when the user clicks Retry in the error state.",
+          "emptyState": "Custom content shown when there are no rows and no filters are active.",
+          "filteredEmptyState": "Custom content shown when there are no rows but a search or filter is active.",
+          "rowActions": "Returns the row-level actions for a given row — up to 3 render inline, more overflow into a menu.",
+          "toolbarStart": "Extra content rendered at the start of the toolbar, before the search field.",
+          "toolbarEnd": "Extra content rendered at the end of the toolbar — typically a page-level Create button.",
+          "filters": "Filter definitions rendered in the toolbar, single- or multi-select.",
+          "density": "Row spacing — comfortable or compact.",
+          "tableLabel": "Accessible name for the table region — read by screen readers.",
+          "onRowRemoved": "Optional callback fired after DataTable itself notices a row disappeared.",
+          "skeletonRowCount": "Number of shimmer rows shown while loading — defaults to the current page size.",
+          "rowLabel": "Derives a human-readable label for a row, used in row actions' accessible names."
+        }
+      },
+      "mockColumns": {
+        "name": "Name",
+        "email": "Email",
+        "status": "Status",
+        "role": "Role",
+        "joined": "Joined"
+      },
+      "mockStatus": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "mockActions": {
+        "view": "View",
+        "edit": "Edit",
+        "duplicate": "Duplicate",
+        "archive": "Archive",
+        "delete": "Delete"
+      },
+      "mockDisabledReason": "Requires the Admin role",
+      "mockError": "Could not load this list. This is a simulated error for documentation purposes.",
+      "states": {
+        "default": "Default",
+        "sorted": "Sorted",
+        "loading": "Loading",
+        "refetching": "Refetching (partial)",
+        "empty": "Empty",
+        "filteredEmpty": "Empty, with filters active",
+        "error": "Error",
+        "disabledAction": "Disabled row action"
+      },
+      "mobile": {
+        "note": "Real breakpoint detection uses useBreakpoint() — this section renders DataTableCards directly to preview the layout regardless of the current viewport width."
+      }
+    },
+    "feedback": {
+      "title": "Feedback, status & page states",
+      "sections": {
+        "toast": "Toast",
+        "alert": "Alert",
+        "pageStates": "Page states",
+        "loadingBoundary": "LoadingBoundary & Skeleton",
+        "modal": "Modal & ConfirmDialog",
+        "badgeStatus": "Badge & Status",
+        "rtl": "RTL preview"
+      },
+      "rules": {
+        "toast": "Toasts are polite, dismissible, and pause on hover/focus. A danger toast can never auto-dismiss — use an assertive Alert or a ConfirmDialog for anything that requires a decision.",
+        "alert": "Alert carries a Retry action and a correlation id for recoverable errors, and switches to role=\"alert\" for validation summaries and danger banners.",
+        "pageStates": "EmptyState, FilteredEmpty, ErrorState, LoadingState, NotFound and AccessDenied share one panel surface — an empty list with no active filters always shows EmptyState, never FilteredEmpty.",
+        "loadingBoundary": "LoadingBoundary holds its fallback for at least 300ms after loading finishes, so a fast response never flashes a skeleton for a single frame.",
+        "modal": "Modal is labelled by its heading (aria-labelledby) and returns focus to its trigger on close. Irreversible actions require typing the exact, case-sensitive confirmation phrase.",
+        "badgeStatus": "Chips are neutral by default — colour is only applied with tone=\"semantic\", where it maps to a documented state. Status always renders a dot and a label together, never colour alone."
+      },
+      "toast": {
+        "info": "Show info toast",
+        "success": "Show success toast",
+        "warning": "Show warning toast",
+        "danger": "Show danger toast (forced to duration=0)",
+        "message": {
+          "info": "Preferences saved.",
+          "success": "User created.",
+          "warning": "Connection is unstable.",
+          "danger": "Could not reach the server."
+        }
+      },
+      "alert": {
+        "infoTitle": "Heads up",
+        "infoBody": "This workspace will move to a new region next week.",
+        "successTitle": "Invitation sent",
+        "successBody": "The teammate will receive an email shortly.",
+        "successAction": "View invitations",
+        "warningTitle": "Approaching your seat limit",
+        "warningBody": "You're using 18 of 20 seats.",
+        "dangerTitle": "Couldn't save changes",
+        "dangerBody": "The request failed. Retry, or contact support if this keeps happening."
+      },
+      "loadingBoundary": {
+        "toggle": "Toggle loading",
+        "content": "Loaded content"
+      },
+      "modal": {
+        "open": "Open modal",
+        "title": "Edit profile",
+        "body": "This is a plain modal, labelled by its heading.",
+        "openDestructive": "Open destructive confirm",
+        "consequence": "Delete user amina@example.com — this cannot be undone."
+      },
+      "badge": {
+        "neutralExample": "Agent",
+        "semanticExample": "Agent"
       }
     }
   },

@@ -37,6 +37,15 @@ export function themeToCssVariables(theme: ThemeTokens, locale: 'en' | 'ar' = 'e
   vars['--color-danger-bg'] = 'var(--red-50)';
   vars['--color-danger-solid'] = 'var(--red-600)';
 
+  // Status colour map (Badge/Status "documented state" colours — AC7/AC8).
+  // Named separately from the generic semantic aliases above so a component
+  // that renders a *status* never has to reach for `--color-success` etc.
+  // directly; today they resolve to the same values.
+  vars['--color-status-success'] = 'var(--color-success)';
+  vars['--color-status-warning'] = 'var(--color-warning)';
+  vars['--color-status-neutral'] = 'var(--color-text-muted)';
+  vars['--color-status-danger'] = 'var(--color-danger-solid)';
+
   // 3. Legacy aliases — every pre-Story-10 name, re-pointed at the semantic
   // layer so existing `*.module.css` files keep resolving during the sweep.
   vars['--color-primary'] = 'var(--color-action)';

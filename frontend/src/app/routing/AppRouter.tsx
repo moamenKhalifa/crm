@@ -15,6 +15,8 @@ const UserAdminRoutes = lazy(() => import('@features/identity/users/UserRoutes')
 const RoleAdminRoutes = lazy(() => import('@features/identity/roles/RoleRoutes'));
 const PermissionAdminRoutes = lazy(() => import('@features/identity/permissions/PermissionRoutes'));
 const TokensPage = lazy(() => import('@features/design-system/TokensPage'));
+const DataTablePage = lazy(() => import('@features/design-system/DataTablePage'));
+const FeedbackPage = lazy(() => import('@features/design-system/FeedbackPage'));
 
 // `shared/authorization/RequireAuth` cannot import `useAuth` itself (shared/
 // must not import features/) — this wrapper, living in app/routing (which
@@ -78,7 +80,13 @@ function createRouter() {
     },
     { path: '/forbidden', element: <ForbiddenPage /> },
     // Docs are not shipped to production (AC13's "living" page is a dev tool).
-    ...(import.meta.env.DEV ? [{ path: '/design-system/tokens', element: <TokensPage /> }] : []),
+    ...(import.meta.env.DEV
+      ? [
+          { path: '/design-system/tokens', element: <TokensPage /> },
+          { path: '/design-system/data-table', element: <DataTablePage /> },
+          { path: '/design-system/feedback', element: <FeedbackPage /> },
+        ]
+      : []),
     {
       path: '/portal/*',
       element: (

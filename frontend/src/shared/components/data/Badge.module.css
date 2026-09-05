@@ -16,16 +16,16 @@
 }
 
 .badge[data-variant='success'] {
-  background: var(--color-success);
+  background: var(--color-status-success);
   color: var(--color-surface);
 }
 
 .badge[data-variant='warning'] {
-  background: var(--color-warning);
+  background: var(--color-status-warning);
   color: var(--color-surface);
 }
 
 .badge[data-variant='danger'] {
-  background: var(--color-danger-solid);
+  background: var(--color-status-danger);
   color: var(--color-surface);
 }
