@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.identity_access.domain.entities.permission import Permission
 from app.modules.identity_access.domain.errors import DuplicatePermissionError
+from app.modules.identity_access.domain.ports.repositories import ListQuery
 from app.modules.identity_access.infrastructure.orm.models import PermissionModel
+
+# `PermissionModel` has no `created_at` column, so "code" is the only
+# sortable column.
+_SORT_COLUMNS: dict[str, Any] = {"code": PermissionModel.code}
 
 
 def _to_entity(model: PermissionModel) -> Permission:
@@ -68,3 +74,27 @@ class SqlAlchemyPermissionRepository:
             select(PermissionModel).order_by(PermissionModel.code).limit(limit).offset(offset)
         )
         return [_to_entity(m) for m in result.scalars().all()]
+
+    async def list_paged(self, query: ListQuery) -> tuple[list[Permission], int]:
+        sort_column = _SORT_COLUMNS["code"]
+        if query.sort_by is not None:
+            column = _SORT_COLUMNS.get(query.sort_by)
+            if column is None:
+                raise ValueError(f"Unknown sort column: {query.sort_by}")
+            sort_column = column
+
+        stmt = select(PermissionModel)
+        if query.q and len(query.q.strip()) >= 2:
+            pattern = f"%{query.q.strip()}%"
+            stmt = stmt.where(
+                or_(PermissionModel.code.ilike(pattern), PermissionModel.description.ilike(pattern))
+            )
+
+        total = (
+            await self._session.execute(select(func.count()).select_from(stmt.subquery()))
+        ).scalar_one()
+
+        order_col = sort_column.desc() if query.sort_dir == "desc" else sort_column.asc()
+        stmt = stmt.order_by(order_col).limit(query.limit).offset(query.offset)
+        result = await self._session.execute(stmt)
+        return [_to_entity(m) for m in result.scalars().all()], total

@@ -4,6 +4,7 @@ tests of the application layer that must not touch a real database."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from typing import Callable
 from uuid import UUID
 
 from app.modules.identity_access.domain.entities.permission import Permission
@@ -15,11 +16,24 @@ from app.modules.identity_access.domain.errors import (
     DuplicatePermissionError,
     DuplicateRoleError,
 )
+from app.modules.identity_access.domain.ports.repositories import ListQuery
 from app.modules.identity_access.domain.ports.tokens import (
     AccessTokenClaims,
     IssuedRefreshToken,
     TokenInvalidError,
 )
+
+# Mirrors each SQLAlchemy repository's sort-column whitelist so behaviour
+# matches between the fakes (used by application-layer tests) and the real
+# repositories (used by infrastructure-layer tests).
+_USER_SORT_KEYS: dict[str, Callable[[User], object]] = {
+    "full_name": lambda u: u.full_name,
+    "email": lambda u: u.email,
+    "created_at": lambda u: u.created_at,
+    "is_active": lambda u: u.is_active,
+}
+_ROLE_SORT_KEYS: dict[str, Callable[[Role], object]] = {"name": lambda r: r.name}
+_PERMISSION_SORT_KEYS: dict[str, Callable[[Permission], object]] = {"code": lambda p: p.code}
 
 
 class FrozenClock:
@@ -64,6 +78,32 @@ class FakeUserRepository:
     async def list_all(self, limit: int, offset: int) -> list[User]:
         return list(self._by_id.values())[offset : offset + limit]
 
+    async def list_paged(self, query: ListQuery) -> tuple[list[User], int]:
+        items = list(self._by_id.values())
+
+        if query.q and len(query.q.strip()) >= 2:
+            needle = query.q.strip().lower()
+            items = [u for u in items if needle in u.full_name.lower() or needle in u.email.lower()]
+
+        is_active_filter = query.filters.get("is_active")
+        if is_active_filter:
+            wanted_active = is_active_filter[0] == "true"
+            items = [u for u in items if u.is_active == wanted_active]
+
+        role_id_filter = query.filters.get("role_id")
+        if role_id_filter:
+            wanted_roles = {UUID(r) for r in role_id_filter}
+            items = [u for u in items if u.role_ids & wanted_roles]
+
+        sort_by = query.sort_by or "created_at"
+        key_fn = _USER_SORT_KEYS.get(sort_by)
+        if key_fn is None:
+            raise ValueError(f"Unknown sort column: {query.sort_by}")
+        items = sorted(items, key=key_fn, reverse=(query.sort_dir == "desc"))
+
+        total = len(items)
+        return items[query.offset : query.offset + query.limit], total
+
 
 class FakeRoleRepository:
     def __init__(self) -> None:
@@ -95,6 +135,31 @@ class FakeRoleRepository:
     async def list_all(self, limit: int, offset: int) -> list[Role]:
         return list(self._by_id.values())[offset : offset + limit]
 
+    async def list_paged(self, query: ListQuery) -> tuple[list[Role], int]:
+        items = list(self._by_id.values())
+
+        if query.q and len(query.q.strip()) >= 2:
+            needle = query.q.strip().lower()
+            items = [
+                r
+                for r in items
+                if needle in r.name.lower() or (r.description is not None and needle in r.description.lower())
+            ]
+
+        has_permission_filter = query.filters.get("has_permission_id")
+        if has_permission_filter:
+            wanted_permissions = {UUID(p) for p in has_permission_filter}
+            items = [r for r in items if r.permission_ids & wanted_permissions]
+
+        sort_by = query.sort_by or "name"
+        key_fn = _ROLE_SORT_KEYS.get(sort_by)
+        if key_fn is None:
+            raise ValueError(f"Unknown sort column: {query.sort_by}")
+        items = sorted(items, key=key_fn, reverse=(query.sort_dir == "desc"))
+
+        total = len(items)
+        return items[query.offset : query.offset + query.limit], total
+
 
 class FakePermissionRepository:
     def __init__(self) -> None:
@@ -125,6 +190,26 @@ class FakePermissionRepository:
 
     async def list_all(self, limit: int, offset: int) -> list[Permission]:
         return list(self._by_id.values())[offset : offset + limit]
+
+    async def list_paged(self, query: ListQuery) -> tuple[list[Permission], int]:
+        items = list(self._by_id.values())
+
+        if query.q and len(query.q.strip()) >= 2:
+            needle = query.q.strip().lower()
+            items = [
+                p
+                for p in items
+                if needle in p.code.lower() or (p.description is not None and needle in p.description.lower())
+            ]
+
+        sort_by = query.sort_by or "code"
+        key_fn = _PERMISSION_SORT_KEYS.get(sort_by)
+        if key_fn is None:
+            raise ValueError(f"Unknown sort column: {query.sort_by}")
+        items = sorted(items, key=key_fn, reverse=(query.sort_dir == "desc"))
+
+        total = len(items)
+        return items[query.offset : query.offset + query.limit], total
 
 
 class FakeRefreshTokenRepository:

@@ -18,6 +18,7 @@ from app.modules.identity_access.application.use_cases.users.set_user_active imp
 from app.modules.identity_access.application.use_cases.users.update_user import UpdateUser, UpdateUserCommand
 from app.modules.identity_access.domain.entities.role import Role
 from app.modules.identity_access.domain.errors import DuplicateAccountError, RoleNotFoundError, UserNotFoundError
+from app.modules.identity_access.domain.ports.repositories import ListQuery
 
 from ..fakes import FakePasswordHasher, FakeRoleRepository, FakeUserRepository, FrozenClock
 
@@ -121,6 +122,19 @@ async def test_assign_roles_to_user_replaces_role_set():
         AssignRolesToUserCommand(user_id=created.id, role_ids=frozenset({role.id}))
     )
     assert [r.id for r in updated.roles] == [role.id]
+
+
+async def test_list_users_execute_paged_returns_total():
+    user_repo, role_repo, hasher, clock = _repos()
+    for i in range(3):
+        await CreateUser(user_repo, role_repo, hasher, clock).execute(
+            CreateUserCommand(email=f"user{i}@example.com", password="Passw0rd!", full_name=f"User {i}")
+        )
+
+    result = await ListUsers(user_repo, role_repo).execute_paged(ListQuery(limit=2, offset=0))
+
+    assert result.total == 3
+    assert len(result.items) == 2
 
 
 async def test_get_user_roles_returns_assigned_roles():

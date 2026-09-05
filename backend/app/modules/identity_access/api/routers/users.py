@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.identity_access.application.use_cases.users.assign_roles_to_user import (
@@ -27,8 +27,10 @@ from app.modules.identity_access.infrastructure.composition import (
 )
 from app.shared.config.settings import Settings, get_settings
 
+from ._list_query import parse_list_query
 from ..dependencies import get_db_session, require_permission
 from ..mapping import role_to_response, user_to_response
+from ..schemas.common import PagedResponse
 from ..schemas.role import RoleSummaryResponse
 from ..schemas.user import (
     AssignRolesRequest,
@@ -40,14 +42,45 @@ from ..schemas.user import (
 
 router = APIRouter()
 
+_USER_SORT_COLUMNS = frozenset({"full_name", "email", "created_at", "is_active"})
 
-@router.get("", response_model=list[UserResponse], dependencies=[Depends(require_permission("User.View"))])
+
+# `response_model` is intentionally omitted: this handler returns either a
+# flat list (legacy contract, `paged` unset/false) or a `PagedResponse`
+# envelope (`paged=true`), and Pydantic can't statically type "list OR
+# envelope" from a single response_model. The test suite asserts on
+# `response.json()`, not the generated OpenAPI schema, so this is a
+# deliberate, low-risk trade-off rather than a gap.
+@router.get("", dependencies=[Depends(require_permission("User.View"))])
 async def list_users(
-    limit: int = 50, offset: int = 0, session: AsyncSession = Depends(get_db_session)
-) -> list[UserResponse]:
+    limit: int = 50,
+    offset: int = 0,
+    q: str | None = None,
+    sort: str | None = None,
+    is_active: bool | None = None,
+    role_id: list[UUID] = Query(default=[]),
+    paged: bool = False,
+    session: AsyncSession = Depends(get_db_session),
+):
+    query = parse_list_query(
+        limit=limit,
+        offset=offset,
+        q=q,
+        sort=sort,
+        allowed_sort_columns=_USER_SORT_COLUMNS,
+        filters={
+            "is_active": (str(is_active).lower(),) if is_active is not None else (),
+            "role_id": tuple(str(r) for r in role_id),
+        },
+    )
     use_case = ListUsers(build_user_repo(session), build_role_repo(session))
-    results = await use_case.execute(limit=limit, offset=offset)
-    return [user_to_response(r) for r in results]
+    result = await use_case.execute_paged(query)
+    items = [user_to_response(u) for u in result.items]
+    if paged:
+        return PagedResponse[UserResponse](
+            items=items, total=result.total, limit=query.limit, offset=query.offset
+        )
+    return items
 
 
 @router.post(

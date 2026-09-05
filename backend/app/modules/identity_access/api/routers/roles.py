@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.identity_access.application.use_cases.roles.assign_permissions_to_role import (
@@ -21,8 +21,10 @@ from app.modules.identity_access.application.use_cases.roles.remove_permissions_
 from app.modules.identity_access.application.use_cases.roles.update_role import UpdateRole, UpdateRoleCommand
 from app.modules.identity_access.infrastructure.composition import build_permission_repo, build_role_repo
 
+from ._list_query import parse_list_query
 from ..dependencies import get_db_session, require_permission
 from ..mapping import permission_to_response, role_to_response
+from ..schemas.common import PagedResponse
 from ..schemas.permission import PermissionSummaryResponse
 from ..schemas.role import (
     AssignPermissionsRequest,
@@ -33,14 +35,37 @@ from ..schemas.role import (
 
 router = APIRouter()
 
+_ROLE_SORT_COLUMNS = frozenset({"name"})
 
-@router.get("", response_model=list[RoleSummaryResponse], dependencies=[Depends(require_permission("Role.View"))])
+
+# `response_model` is intentionally omitted here — see the identical comment
+# on `list_users` in `users.py` for why.
+@router.get("", dependencies=[Depends(require_permission("Role.View"))])
 async def list_roles(
-    limit: int = 50, offset: int = 0, session: AsyncSession = Depends(get_db_session)
-) -> list[RoleSummaryResponse]:
+    limit: int = 50,
+    offset: int = 0,
+    q: str | None = None,
+    sort: str | None = None,
+    has_permission_id: list[UUID] = Query(default=[]),
+    paged: bool = False,
+    session: AsyncSession = Depends(get_db_session),
+):
+    query = parse_list_query(
+        limit=limit,
+        offset=offset,
+        q=q,
+        sort=sort,
+        allowed_sort_columns=_ROLE_SORT_COLUMNS,
+        filters={"has_permission_id": tuple(str(p) for p in has_permission_id)},
+    )
     use_case = ListRoles(build_role_repo(session))
-    results = await use_case.execute(limit=limit, offset=offset)
-    return [role_to_response(r) for r in results]
+    result = await use_case.execute_paged(query)
+    items = [role_to_response(r) for r in result.items]
+    if paged:
+        return PagedResponse[RoleSummaryResponse](
+            items=items, total=result.total, limit=query.limit, offset=query.offset
+        )
+    return items
 
 
 @router.post(

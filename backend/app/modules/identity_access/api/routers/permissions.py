@@ -18,24 +18,47 @@ from app.modules.identity_access.application.use_cases.permissions.update_permis
 )
 from app.modules.identity_access.infrastructure.composition import build_permission_repo
 
+from ._list_query import parse_list_query
 from ..dependencies import get_db_session, require_permission
 from ..mapping import permission_to_response
+from ..schemas.common import PagedResponse
 from ..schemas.permission import CreatePermissionRequest, PermissionSummaryResponse, UpdatePermissionRequest
 
 router = APIRouter()
 
+_PERMISSION_SORT_COLUMNS = frozenset({"code"})
 
+
+# `response_model` is intentionally omitted here — see the identical comment
+# on `list_users` in `users.py` for why.
 @router.get(
     "",
-    response_model=list[PermissionSummaryResponse],
     dependencies=[Depends(require_permission("Permission.View"))],
 )
 async def list_permissions(
-    limit: int = 50, offset: int = 0, session: AsyncSession = Depends(get_db_session)
-) -> list[PermissionSummaryResponse]:
+    limit: int = 50,
+    offset: int = 0,
+    q: str | None = None,
+    sort: str | None = None,
+    paged: bool = False,
+    session: AsyncSession = Depends(get_db_session),
+):
+    query = parse_list_query(
+        limit=limit,
+        offset=offset,
+        q=q,
+        sort=sort,
+        allowed_sort_columns=_PERMISSION_SORT_COLUMNS,
+        filters={},
+    )
     use_case = ListPermissions(build_permission_repo(session))
-    results = await use_case.execute(limit=limit, offset=offset)
-    return [permission_to_response(p) for p in results]
+    result = await use_case.execute_paged(query)
+    items = [permission_to_response(p) for p in result.items]
+    if paged:
+        return PagedResponse[PermissionSummaryResponse](
+            items=items, total=result.total, limit=query.limit, offset=query.offset
+        )
+    return items
 
 
 @router.post(

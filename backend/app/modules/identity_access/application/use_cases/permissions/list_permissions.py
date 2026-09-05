@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from app.modules.identity_access.domain.ports.repositories import PermissionRepository
 
-from ...dto import PermissionSummary
+from ...dto import ListQuery, PagedResult, PermissionSummary
 from ...mappers import to_permission_summary
 
 
@@ -13,3 +13,8 @@ class ListPermissions:
     async def execute(self, limit: int = 50, offset: int = 0) -> list[PermissionSummary]:
         permissions = await self._permission_repo.list_all(limit, offset)
         return [to_permission_summary(permission) for permission in permissions]
+
+    async def execute_paged(self, query: ListQuery) -> PagedResult[PermissionSummary]:
+        permissions, total = await self._permission_repo.list_paged(query)
+        items = [to_permission_summary(permission) for permission in permissions]
+        return PagedResult(items=items, total=total)
