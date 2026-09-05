@@ -21,6 +21,7 @@ const USER = {
   is_active: true,
   is_customer: false,
   roles: [{ id: 'r1', name: 'agent', description: null }],
+  permissions: [] as string[],
 };
 
 function renderDetails(permissions: string[]) {
@@ -115,6 +116,14 @@ describe('UserDetailsPage', () => {
 
     const confirmButton = screen.getByRole('button', { name: 'Confirm' });
     expect(confirmButton).toHaveAttribute('data-variant', 'danger');
+
+    // Deleting a user is destructive — Confirm stays disabled until the
+    // user's email is typed exactly (AC5).
+    expect(confirmButton).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Type “alice@example.com” to confirm'), {
+      target: { value: 'alice@example.com' },
+    });
+    expect(confirmButton).not.toBeDisabled();
     fireEvent.click(confirmButton);
 
     expect(await screen.findByRole('heading', { name: 'User list' })).toBeInTheDocument();
@@ -134,7 +143,6 @@ describe('UserDetailsPage', () => {
       const url = String(input);
       if (url.endsWith('/auth/refresh')) return jsonResponse(TOKENS);
       if (url.endsWith('/auth/me')) return jsonResponse(USER);
-      if (url.includes('/roles/')) return jsonResponse([]);
       return jsonResponse(USER);
     });
 

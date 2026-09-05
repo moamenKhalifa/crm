@@ -58,6 +58,8 @@ export default function UserDetailsPage() {
 
             <section>
               <h2>{t('admin.users.rolesSection.title')}</h2>
+              {/* Role chips are metadata, not a documented semantic state —
+                  neutral by default (AC8), no `tone="semantic"`. */}
               {user.roles.map((role) => (
                 <Badge key={role.id}>{role.name}</Badge>
               ))}
@@ -90,7 +92,9 @@ export default function UserDetailsPage() {
               onClose={() => setConfirmDeleteOpen(false)}
               onConfirm={() => void handleDelete()}
               title={t('admin.users.confirmDelete.title')}
-              variant="danger"
+              destructive
+              consequence={<p>{user.email}</p>}
+              confirmationPhrase={user.email}
             >
               <p>{t('admin.users.confirmDelete.body')}</p>
             </ConfirmDialog>

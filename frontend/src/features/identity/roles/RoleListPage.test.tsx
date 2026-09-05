@@ -7,6 +7,8 @@ import { ConfigProvider } from '@app/configuration/ConfigProvider';
 import { ApiClientProvider } from '@shared/api';
 import { AuthorizationProvider } from '@shared/authorization';
 import { ToastProvider } from '@shared/components';
+import { LocaleProvider } from '@shared/i18n';
+import { defaultBranding, ThemeProvider } from '@shared/theme';
 
 import RoleListPage from './RoleListPage';
 
@@ -19,20 +21,37 @@ const ROLES = [
   { id: 'r2', name: 'admin', description: null },
 ];
 
+const PERMISSIONS_FOR_PICKER = [{ id: 'p1', code: 'User.View', description: null }];
+
+/** Routes the mocked `fetch` by URL — `/identity/roles` gets the `paged=true` envelope, `/identity/permissions` (the filter-option picker fetch) gets the legacy flat array. */
+function mockFetchImplementation(roles: typeof ROLES) {
+  return async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.includes('/identity/permissions')) {
+      return jsonResponse(PERMISSIONS_FOR_PICKER);
+    }
+    return jsonResponse({ items: roles, total: roles.length, limit: 25, offset: 0 });
+  };
+}
+
 function renderList(permissions: string[]) {
   return render(
     <ConfigProvider>
-      <ToastProvider>
-        <AuthProvider>
-          <AuthorizationProvider roles={['admin']} permissions={permissions}>
-            <ApiClientProvider baseUrl="/api">
-              <MemoryRouter initialEntries={['/admin/roles']}>
-                <RoleListPage />
-              </MemoryRouter>
-            </ApiClientProvider>
-          </AuthorizationProvider>
-        </AuthProvider>
-      </ToastProvider>
+      <LocaleProvider>
+        <ThemeProvider branding={defaultBranding}>
+          <ToastProvider>
+            <AuthProvider>
+              <AuthorizationProvider roles={['admin']} permissions={permissions}>
+                <ApiClientProvider baseUrl="/api">
+                  <MemoryRouter initialEntries={['/admin/roles']}>
+                    <RoleListPage />
+                  </MemoryRouter>
+                </ApiClientProvider>
+              </AuthorizationProvider>
+            </AuthProvider>
+          </ToastProvider>
+        </ThemeProvider>
+      </LocaleProvider>
     </ConfigProvider>,
   );
 }
@@ -42,7 +61,7 @@ describe('RoleListPage', () => {
     vi.stubGlobal('fetch', vi.fn());
     window.sessionStorage.clear();
     window.localStorage.clear();
-    vi.mocked(fetch).mockResolvedValue(jsonResponse(ROLES));
+    vi.mocked(fetch).mockImplementation(mockFetchImplementation(ROLES));
   });
 
   afterEach(() => {
@@ -62,16 +81,20 @@ describe('RoleListPage', () => {
     expect(screen.queryByRole('button', { name: 'Create role' })).not.toBeInTheDocument();
   });
 
-  it('hides Delete actions without Role.Delete', async () => {
+  it('disables row-level Delete (with a reason) without Role.Delete, rather than hiding it', async () => {
     renderList(['Role.View']);
     await screen.findByText('agent');
-    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+    const deleteButtons = screen.getAllByRole('button', { name: /^Delete/ });
+    expect(deleteButtons.length).toBeGreaterThan(0);
+    for (const button of deleteButtons) {
+      expect(button).toBeDisabled();
+    }
   });
 
   it('renders row-level Delete with the de-emphasized danger-subtle variant', async () => {
     renderList(['Role.View', 'Role.Delete']);
     await screen.findByText('agent');
-    for (const button of screen.getAllByRole('button', { name: 'Delete' })) {
+    for (const button of screen.getAllByRole('button', { name: /^Delete/ })) {
       expect(button).toHaveAttribute('data-variant', 'danger-subtle');
     }
   });
@@ -80,8 +103,8 @@ describe('RoleListPage', () => {
     renderList(['Role.View', 'Role.Update']);
     await screen.findByText('agent');
 
-    const viewButtons = screen.getAllByRole('button', { name: 'View' });
-    const editButtons = screen.getAllByRole('button', { name: 'Edit' });
+    const viewButtons = screen.getAllByRole('button', { name: /^View/ });
+    const editButtons = screen.getAllByRole('button', { name: /^Edit/ });
     expect(viewButtons.length).toBeGreaterThan(0);
     expect(editButtons.length).toBeGreaterThan(0);
     for (const button of [...viewButtons, ...editButtons]) {
@@ -90,16 +113,44 @@ describe('RoleListPage', () => {
     }
   });
 
+  it('renders the Permission filter when the permission-picker lookup succeeds', async () => {
+    renderList(['Role.View']);
+    await screen.findByText('agent');
+    expect(screen.getByRole('button', { name: 'Permission' })).toBeInTheDocument();
+  });
+
+  it('still renders the role list, without the Permission filter or a global Forbidden toast, when the permission-picker lookup 403s (viewer has Role.View but not Permission.View)', async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/identity/permissions')) {
+        return jsonResponse(
+          { error: { code: 'insufficient_permissions', message: 'Missing required permission: Permission.View' } },
+          403,
+        );
+      }
+      return jsonResponse({ items: ROLES, total: ROLES.length, limit: 25, offset: 0 });
+    });
+
+    renderList(['Role.View']);
+
+    expect(await screen.findByText('agent')).toBeInTheDocument();
+    expect(screen.getByText('admin')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Permission' })).not.toBeInTheDocument();
+    expect(screen.queryByText("You don't have permission to do that.")).not.toBeInTheDocument();
+  });
+
   it('deleting a row calls DELETE and reloads the list', async () => {
     renderList(['Role.View', 'Role.Delete']);
     await screen.findByText('agent');
 
-    vi.mocked(fetch).mockImplementation(async (_input, init) => {
-      if (init?.method === 'DELETE') return new Response(null, { status: 204 });
-      return jsonResponse([ROLES[1]]);
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      if (init?.method === 'DELETE') {
+        return new Response(null, { status: 204 });
+      }
+      return mockFetchImplementation([ROLES[1]])(input);
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Delete' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete — agent' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 
     await waitFor(() =>

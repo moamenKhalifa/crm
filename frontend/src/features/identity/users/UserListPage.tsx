@@ -3,27 +3,29 @@ import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@features/authentication/AuthProvider';
 import type { UserResponse } from '@features/authentication/api';
-import { useApiClient } from '@shared/api';
-import { PermissionGate } from '@shared/authorization';
+import { listRoles } from '@features/identity/roles/api';
+import { isForbidden, useApiClient } from '@shared/api';
+import { PermissionGate, useAuthorization } from '@shared/authorization';
 import {
-  AsyncBoundary,
   Badge,
   Button,
   ConfirmDialog,
+  DataTable,
   EmptyState,
-  Pagination,
+  FilteredEmpty,
   Status,
-  Table,
+  useDataTableState,
   useToast,
-  type TableColumn,
+  type DataTableColumn,
+  type DataTableFilterDef,
+  type DataTableRowAction,
 } from '@shared/components';
+import { toUserMessage } from '@shared/errors';
 import { useApiData } from '@shared/hooks';
 import { useT } from '@shared/i18n';
 
-import { deleteUser, listUsers } from './api';
+import { deleteUser, listUsersPaged } from './api';
 import styles from './UserListPage.module.css';
-
-const PAGE_SIZE = 25;
 
 export default function UserListPage() {
   const { t } = useT();
@@ -31,13 +33,64 @@ export default function UserListPage() {
   const client = useApiClient();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-  const [page, setPage] = useState(1);
+  const { hasPermission } = useAuthorization();
+  const { state, setState, clearFilters } = useDataTableState();
   const [deleteTarget, setDeleteTarget] = useState<UserResponse | null>(null);
 
+  const activeFilter = state.filters.is_active ?? [];
+  const roleIdFilter = state.filters.role_id ?? [];
+
   const query = useApiData({
-    fetch: (c) => listUsers(c, { limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }),
-    deps: [page],
+    fetch: (c) =>
+      listUsersPaged(c, {
+        limit: state.pageSize,
+        offset: (state.page - 1) * state.pageSize,
+        q: state.q || undefined,
+        sort: state.sort ? `${state.sort.key}:${state.sort.dir}` : undefined,
+        is_active: activeFilter[0] === 'true' ? true : activeFilter[0] === 'false' ? false : undefined,
+        role_id: roleIdFilter.length > 0 ? roleIdFilter : undefined,
+      }),
+    deps: [
+      state.page,
+      state.pageSize,
+      state.q,
+      state.sort?.key,
+      state.sort?.dir,
+      activeFilter.join(','),
+      roleIdFilter.join(','),
+    ],
   });
+
+  // Hydrates the `role_id` filter's option list — the same "fetch a full
+  // list for a picker UI" pattern `UserRoleAssignModal.tsx` already uses.
+  // `suppressForbiddenHandling`: this is a convenience lookup for an
+  // optional filter, not the page's core data — a viewer with `User.View`
+  // but not `Role.View` can still fully use this page, just without the
+  // role filter (see `canFilterByRole` below). A 403 here must not fire the
+  // global "Forbidden" toast/reauth-check meant for the page's own denial.
+  const rolesQuery = useApiData({
+    fetch: (c) => listRoles(c, { limit: 100, offset: 0 }, { suppressForbiddenHandling: true }),
+    deps: [],
+  });
+  const canFilterByRole = !isForbidden(rolesQuery.error);
+
+  const users = query.data?.items ?? [];
+  const isInitialLoading = query.isLoading && query.data === undefined;
+  const isRefetching = query.isLoading && query.data !== undefined;
+
+  // Human-readable labels for whichever filters are currently active — shown
+  // as chips in `FilteredEmpty` so the user can see *why* the list is empty.
+  const activeFilterLabels: string[] = [
+    ...(activeFilter[0]
+      ? [t(activeFilter[0] === 'true' ? 'admin.users.status.active' : 'admin.users.status.inactive')]
+      : []),
+    ...(canFilterByRole
+      ? roleIdFilter
+          .map((id) => rolesQuery.data?.find((role) => role.id === id)?.name)
+          .filter((name): name is string => Boolean(name))
+      : []),
+    ...(state.q ? [state.q] : []),
+  ];
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) {
@@ -54,16 +107,21 @@ export default function UserListPage() {
     }
   };
 
-  const columns: TableColumn<UserResponse>[] = [
-    { key: 'full_name', header: t('admin.users.columns.fullName') },
+  const columns: DataTableColumn<UserResponse>[] = [
+    { key: 'full_name', labelKey: 'admin.users.columns.fullName', sortable: true, skeletonWidth: 16 },
     {
       key: 'email',
-      header: t('admin.users.columns.email'),
+      labelKey: 'admin.users.columns.email',
+      sortable: true,
+      dir: 'ltr',
+      skeletonWidth: 20,
       render: (row) => <span className={styles.muted}>{row.email}</span>,
     },
     {
       key: 'is_active',
-      header: t('admin.users.columns.active'),
+      labelKey: 'admin.users.columns.active',
+      sortable: true,
+      skeletonWidth: 8,
       render: (row) => (
         <Status
           variant={row.is_active ? 'success' : 'neutral'}
@@ -73,83 +131,122 @@ export default function UserListPage() {
     },
     {
       key: 'roles',
-      header: t('admin.users.columns.roles'),
+      labelKey: 'admin.users.columns.roles',
+      hideBelow: 'tablet',
+      skeletonWidth: 12,
       render: (row) => (
         <div className={styles.badgeGroup}>
           {row.roles.map((role) => (
-            <Badge key={role.id} variant="info">
-              {role.name}
-            </Badge>
+            // Role chips are metadata, not a documented semantic state — the
+            // default neutral tone applies (AC8); no `tone="semantic"`.
+            <Badge key={role.id}>{role.name}</Badge>
           ))}
         </div>
       ),
     },
-    {
-      key: 'actions',
-      header: t('admin.users.columns.actions'),
-      render: (row) => (
-        <>
-          <Button variant="tertiary" size="sm" onClick={() => navigate(row.id)}>
-            {t('admin.users.actions.view')}
-          </Button>{' '}
-          <PermissionGate permission="User.Update">
-            <Button variant="tertiary" size="sm" onClick={() => navigate(`${row.id}/edit`)}>
-              {t('admin.users.actions.edit')}
-            </Button>{' '}
-          </PermissionGate>
-          <PermissionGate permission="User.Delete">
-            <Button
-              variant="danger-subtle"
-              size="sm"
-              disabled={row.id === currentUser?.id}
-              disabledReason={row.id === currentUser?.id ? t('admin.common.actions.reason.cannotDeleteSelf') : undefined}
-              onClick={() => setDeleteTarget(row)}
-            >
-              {t('admin.users.actions.delete')}
-            </Button>
-          </PermissionGate>
-        </>
-      ),
-    },
   ];
 
-  // Backend list endpoint returns a flat array with no `total` — a page
-  // shorter than PAGE_SIZE is treated as the last page; otherwise assume at
-  // least one more exists. Known limitation: no accurate page count without
-  // a backend change to return a total.
-  const total = query.data
-    ? query.data.length < PAGE_SIZE
-      ? (page - 1) * PAGE_SIZE + query.data.length
-      : page * PAGE_SIZE + 1
-    : 0;
+  const filters: DataTableFilterDef[] = [
+    {
+      key: 'is_active',
+      labelKey: 'admin.users.filters.status',
+      options: [
+        { value: 'true', labelKey: 'admin.users.status.active' },
+        { value: 'false', labelKey: 'admin.users.status.inactive' },
+      ],
+    },
+    // Omitted entirely (not just empty) for a viewer without `Role.View` —
+    // filtering-by-role is a convenience on top of the users list, not a
+    // requirement to use it.
+    ...(canFilterByRole
+      ? [
+          {
+            key: 'role_id',
+            labelKey: 'admin.users.filters.role',
+            multi: true,
+            options: (rolesQuery.data ?? []).map((role) => ({ value: role.id, label: role.name })),
+          } satisfies DataTableFilterDef,
+        ]
+      : []),
+  ];
+
+  const rowActions = (row: UserResponse): DataTableRowAction<UserResponse>[] => {
+    const isSelf = row.id === currentUser?.id;
+    return [
+      { key: 'view', labelKey: 'admin.users.actions.view', onSelect: (user) => navigate(user.id) },
+      {
+        key: 'edit',
+        labelKey: 'admin.users.actions.edit',
+        isAllowed: hasPermission('User.Update'),
+        onSelect: (user) => navigate(`${user.id}/edit`),
+      },
+      {
+        key: 'delete',
+        labelKey: 'admin.users.actions.delete',
+        variant: 'danger',
+        isAllowed: hasPermission('User.Delete') && !isSelf,
+        disabledReason: isSelf ? t('admin.common.actions.reason.cannotDeleteSelf') : undefined,
+        onSelect: (user) => setDeleteTarget(user),
+      },
+    ];
+  };
+
+  const createButton = (
+    <PermissionGate permission="User.Create">
+      <Button variant="primary" onClick={() => navigate('new')}>
+        {t('admin.users.create')}
+      </Button>
+    </PermissionGate>
+  );
+
+  const emptyState = <EmptyState title={t('admin.users.empty.title')} action={createButton} />;
+
+  const filteredEmptyState = (
+    <FilteredEmpty
+      title={t('admin.users.emptyFiltered.title')}
+      activeFilters={activeFilterLabels}
+      onClearFilters={clearFilters}
+    />
+  );
 
   return (
     <div>
       <header className={styles.pageHeader}>
         <div>
-          <h1 className={styles.pageTitle}>{t('admin.users.title')}</h1>
-          <p className={styles.pageSubtitle}>{t('admin.users.subtitle', { count: query.data?.length ?? 0 })}</p>
+          <h1 id="page-heading" tabIndex={-1} className={styles.pageTitle}>
+            {t('admin.users.title')}
+          </h1>
+          <p className={styles.pageSubtitle}>{t('admin.users.subtitle', { count: query.data?.total ?? 0 })}</p>
         </div>
-        <PermissionGate permission="User.Create">
-          <Button variant="primary" onClick={() => navigate('new')}>
-            {t('admin.users.create')}
-          </Button>
-        </PermissionGate>
       </header>
-      <AsyncBoundary query={query} empty={<EmptyState />}>
-        {(users) => (
-          <>
-            <Table columns={columns} rows={users} getRowKey={(row) => row.id} />
-            <Pagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
-          </>
-        )}
-      </AsyncBoundary>
+      <DataTable
+        columns={columns}
+        rows={users}
+        rowKey={(row) => row.id}
+        totalCount={query.data?.total ?? 0}
+        state={state}
+        onStateChange={setState}
+        isLoading={isInitialLoading}
+        isRefetching={isRefetching}
+        isError={Boolean(query.error)}
+        errorMessage={query.error ? toUserMessage(query.error, t) : undefined}
+        onRetry={query.reload}
+        emptyState={emptyState}
+        filteredEmptyState={filteredEmptyState}
+        rowActions={rowActions}
+        rowLabel={(row) => row.full_name}
+        toolbarEnd={createButton}
+        filters={filters}
+        tableLabel={t('admin.users.title')}
+      />
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => void handleConfirmDelete()}
         title={t('admin.users.confirmDelete.title')}
-        variant="danger"
+        destructive
+        consequence={deleteTarget && <p>{deleteTarget.email}</p>}
+        confirmationPhrase={deleteTarget?.email}
       >
         <p>{t('admin.users.confirmDelete.body')}</p>
       </ConfirmDialog>

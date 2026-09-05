@@ -60,6 +60,8 @@ export default function RoleDetailsPage() {
             <AsyncBoundary query={permissionsQuery}>
               {(permissions) => (
                 <>
+                  {/* Permission chips are metadata, not a documented semantic
+                      state — neutral by default (AC8), no `tone="semantic"`. */}
                   {permissions.map((permission) => (
                     <Badge key={permission.id}>
                       {permission.code}
@@ -102,7 +104,8 @@ export default function RoleDetailsPage() {
             onClose={() => setConfirmDeleteOpen(false)}
             onConfirm={() => void handleDelete()}
             title={t('admin.roles.confirmDelete.title')}
-            variant="danger"
+            destructive
+            consequence={<p>{role.name}</p>}
           >
             <p>{t('admin.roles.confirmDelete.body')}</p>
           </ConfirmDialog>

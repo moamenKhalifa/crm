@@ -7,6 +7,8 @@ import { ConfigProvider } from '@app/configuration/ConfigProvider';
 import { ApiClientProvider } from '@shared/api';
 import { AuthorizationProvider } from '@shared/authorization';
 import { ToastProvider } from '@shared/components';
+import { LocaleProvider } from '@shared/i18n';
+import { defaultBranding, ThemeProvider } from '@shared/theme';
 
 import PermissionListPage from './PermissionListPage';
 
@@ -19,20 +21,28 @@ const PERMISSIONS = [
   { id: 'p2', code: 'User.Create', description: null },
 ];
 
+function mockFetchImplementation(permissions: typeof PERMISSIONS) {
+  return async () => jsonResponse({ items: permissions, total: permissions.length, limit: 25, offset: 0 });
+}
+
 function renderList(permissions: string[]) {
   return render(
     <ConfigProvider>
-      <ToastProvider>
-        <AuthProvider>
-          <AuthorizationProvider roles={['admin']} permissions={permissions}>
-            <ApiClientProvider baseUrl="/api">
-              <MemoryRouter initialEntries={['/admin/permissions']}>
-                <PermissionListPage />
-              </MemoryRouter>
-            </ApiClientProvider>
-          </AuthorizationProvider>
-        </AuthProvider>
-      </ToastProvider>
+      <LocaleProvider>
+        <ThemeProvider branding={defaultBranding}>
+          <ToastProvider>
+            <AuthProvider>
+              <AuthorizationProvider roles={['admin']} permissions={permissions}>
+                <ApiClientProvider baseUrl="/api">
+                  <MemoryRouter initialEntries={['/admin/permissions']}>
+                    <PermissionListPage />
+                  </MemoryRouter>
+                </ApiClientProvider>
+              </AuthorizationProvider>
+            </AuthProvider>
+          </ToastProvider>
+        </ThemeProvider>
+      </LocaleProvider>
     </ConfigProvider>,
   );
 }
@@ -42,7 +52,7 @@ describe('PermissionListPage', () => {
     vi.stubGlobal('fetch', vi.fn());
     window.sessionStorage.clear();
     window.localStorage.clear();
-    vi.mocked(fetch).mockResolvedValue(jsonResponse(PERMISSIONS));
+    vi.mocked(fetch).mockImplementation(mockFetchImplementation(PERMISSIONS));
   });
 
   afterEach(() => {
@@ -62,16 +72,20 @@ describe('PermissionListPage', () => {
     expect(screen.queryByRole('button', { name: 'Create permission' })).not.toBeInTheDocument();
   });
 
-  it('hides Delete actions without Permission.Delete', async () => {
+  it('disables row-level Delete (with a reason) without Permission.Delete, rather than hiding it', async () => {
     renderList(['Permission.View']);
     await screen.findByText('User.View');
-    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+    const deleteButtons = screen.getAllByRole('button', { name: /^Delete/ });
+    expect(deleteButtons.length).toBeGreaterThan(0);
+    for (const button of deleteButtons) {
+      expect(button).toBeDisabled();
+    }
   });
 
   it('renders row-level Delete with the de-emphasized danger-subtle variant', async () => {
     renderList(['Permission.View', 'Permission.Delete']);
     await screen.findByText('User.View');
-    for (const button of screen.getAllByRole('button', { name: 'Delete' })) {
+    for (const button of screen.getAllByRole('button', { name: /^Delete/ })) {
       expect(button).toHaveAttribute('data-variant', 'danger-subtle');
     }
   });
@@ -80,8 +94,8 @@ describe('PermissionListPage', () => {
     renderList(['Permission.View', 'Permission.Update']);
     await screen.findByText('User.View');
 
-    const viewButtons = screen.getAllByRole('button', { name: 'View' });
-    const editButtons = screen.getAllByRole('button', { name: 'Edit' });
+    const viewButtons = screen.getAllByRole('button', { name: /^View/ });
+    const editButtons = screen.getAllByRole('button', { name: /^Edit/ });
     expect(viewButtons.length).toBeGreaterThan(0);
     expect(editButtons.length).toBeGreaterThan(0);
     for (const button of [...viewButtons, ...editButtons]) {
@@ -95,11 +109,13 @@ describe('PermissionListPage', () => {
     await screen.findByText('User.View');
 
     vi.mocked(fetch).mockImplementation(async (_input, init) => {
-      if (init?.method === 'DELETE') return new Response(null, { status: 204 });
-      return jsonResponse([PERMISSIONS[1]]);
+      if (init?.method === 'DELETE') {
+        return new Response(null, { status: 204 });
+      }
+      return mockFetchImplementation([PERMISSIONS[1]])();
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Delete' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete — User.View' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 
     await waitFor(() =>
